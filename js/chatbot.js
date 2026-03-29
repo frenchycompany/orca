@@ -1,226 +1,353 @@
-// Chatbot ORCA - Version complète avec IA
+/**
+ * Chatbot ORCA - Widget conversationnel
+ * Objectif : guider le visiteur et obtenir ses coordonnées
+ */
 (function() {
     'use strict';
-    
-    var chatId = null;
-    var baseUrl = window.chatbotBaseUrl || '';
-    var currentStep = 1;
-    var isFormMode = false;
 
-    // Créer le widget
+    var chatId = null;
+    var currentStep = 1;
+    var apiUrl = (window.chatbotBaseUrl || '') + 'chatbot/api.php';
+
+    // ==========================================
+    // Créer le widget HTML
+    // ==========================================
     function createWidget() {
         var div = document.createElement('div');
-        div.id = 'chatbot-widget';
-        div.innerHTML = 
-            '<div id="cb-window" style="display:none;position:fixed;bottom:90px;right:20px;width:400px;height:550px;background:white;border-radius:16px;box-shadow:0 12px 50px rgba(0,0,0,0.35);z-index:9999;font-family:Arial,sans-serif;overflow:hidden;transition:all 0.3s;">' +
-            '<div style="background:linear-gradient(135deg,#1a5653 0%,#124a47 100%);color:white;padding:18px;display:flex;justify-content:space-between;align-items:center;">' +
-            '<div><div style="font-weight:bold;font-size:17px;">Assistant ORCA</div><div style="font-size:12px;opacity:0.85;">En ligne - Réponse sous 24h</div></div>' +
-            '<span onclick="window.cbToggle()" style="cursor:pointer;font-size:24px;line-height:1;opacity:0.8;transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.8">✕</span>' +
+        div.id = 'orca-chatbot';
+        div.innerHTML =
+            '<div id="cb-win" style="display:none;position:fixed;bottom:90px;right:20px;width:380px;max-height:600px;background:#fff;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,0.25);z-index:10000;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;overflow:hidden;display:none;flex-direction:column;">' +
+                '<div style="background:linear-gradient(135deg,#1a5653,#124a47);color:#fff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">' +
+                    '<div><div style="font-weight:700;font-size:16px;">Assistant ORCA</div><div style="font-size:12px;opacity:.8;">En ligne</div></div>' +
+                    '<span id="cb-close" style="cursor:pointer;font-size:22px;opacity:.8;padding:4px 8px;">✕</span>' +
+                '</div>' +
+                '<div id="cb-msgs" style="flex:1;overflow-y:auto;padding:16px;background:#f5f7f9;min-height:300px;max-height:400px;"></div>' +
+                '<div id="cb-form-area" style="display:none;padding:16px;background:#fff;border-top:1px solid #eee;">' +
+                    '<input id="cf-prenom" placeholder="Prénom *" style="width:100%;padding:10px;margin:4px 0;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:14px;">' +
+                    '<input id="cf-nom" placeholder="Nom *" style="width:100%;padding:10px;margin:4px 0;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:14px;">' +
+                    '<input id="cf-email" type="email" placeholder="Email *" style="width:100%;padding:10px;margin:4px 0;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:14px;">' +
+                    '<input id="cf-tel" type="tel" placeholder="Téléphone *" style="width:100%;padding:10px;margin:4px 0;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:14px;">' +
+                    '<button id="cf-submit" style="width:100%;padding:12px;margin-top:8px;background:#1a5653;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:15px;font-weight:700;">Envoyer mes coordonnées</button>' +
+                '</div>' +
+                '<div id="cb-input-area" style="padding:12px 16px;background:#fff;border-top:1px solid #eee;display:flex;gap:8px;">' +
+                    '<input id="cb-input" type="text" placeholder="Votre message..." style="flex:1;padding:10px 14px;border:1px solid #ddd;border-radius:24px;font-size:14px;outline:none;" autocomplete="off">' +
+                    '<button id="cb-send" style="padding:10px 18px;background:#1a5653;color:#fff;border:none;border-radius:24px;cursor:pointer;font-size:14px;font-weight:700;">Envoyer</button>' +
+                '</div>' +
             '</div>' +
-            '<div id="cb-messages" style="height:370px;overflow-y:auto;padding:18px;background:#f5f7f9;"></div>' +
-            '<div style="padding:16px;background:white;border-top:1px solid #e8e8e8;">' +
-            '<div id="cb-buttons" style="margin-bottom:12px;max-height:100px;overflow-y:auto;"></div>' +
-            '<div id="cb-form" style="display:none;background:#f8f9fa;padding:12px;border-radius:10px;margin-bottom:10px;">' +
-            '<input id="cb-prenom" type="text" placeholder="Prénom *" style="width:100%;padding:10px;margin:4px 0;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:14px;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor=\'#1a5653\'" onblur="this.style.borderColor=\'#ddd\'">' +
-            '<input id="cb-nom" type="text" placeholder="Nom *" style="width:100%;padding:10px;margin:4px 0;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:14px;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor=\'#1a5653\'" onblur="this.style.borderColor=\'#ddd\'">' +
-            '<input id="cb-email" type="email" placeholder="Email *" style="width:100%;padding:10px;margin:4px 0;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:14px;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor=\'#1a5653\'" onblur="this.style.borderColor=\'#ddd\'">' +
-            '<input id="cb-tel" type="tel" placeholder="Téléphone *" style="width:100%;padding:10px;margin:4px 0;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:14px;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor=\'#1a5653\'" onblur="this.style.borderColor=\'#ddd\'">' +
-            '<button onclick="window.cbSubmitForm()" style="width:100%;padding:12px;margin-top:8px;background:#1a5653;color:white;border:none;border-radius:8px;cursor:pointer;font-size:15px;font-weight:bold;transition:all 0.2s;" onmouseover="this.style.background=\'#124a47\'" onmouseout="this.style.background=\'#1a5653\'">Envoyer mes coordonnées</button>' +
-            '</div>' +
-            '<div id="cb-textarea" style="display:flex;gap:10px;">' +
-            '<input id="cb-input" type="text" placeholder="Écrivez votre message..." style="flex:1;padding:12px 15px;border:1px solid #ddd;border-radius:10px;font-size:14px;outline:none;transition:border-color 0.2s;" onfocus="this.style.borderColor=\'#1a5653\'" onblur="this.style.borderColor=\'#ddd\'" onkeypress="if(event.key===\'Enter\')window.cbSendText()">' +
-            '<button onclick="window.cbSendText()" style="padding:12px 20px;background:#1a5653;color:white;border:none;border-radius:10px;cursor:pointer;font-size:14px;font-weight:bold;transition:all 0.2s;" onmouseover="this.style.background=\'#124a47\'" onmouseout="this.style.background=\'#1a5653\'">Envoyer</button>' +
-            '</div>' +
-            '</div>' +
-            '</div>' +
-            '<div id="cb-fab" onclick="window.cbToggle()" style="position:fixed;bottom:20px;right:20px;width:65px;height:65px;background:linear-gradient(135deg,#1a5653 0%,#124a47 100%);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 20px rgba(26,86,83,0.4);z-index:9999;transition:all 0.3s;" onmouseover="this.style.transform=\'scale(1.1)\';this.style.boxShadow=\'0 8px 25px rgba(26,86,83,0.5)\'" onmouseout="this.style.transform=\'scale(1)\';this.style.boxShadow=\'0 6px 20px rgba(26,86,83,0.4)\'">' +
-            '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>' +
+            '<div id="cb-fab" style="position:fixed;bottom:20px;right:20px;width:62px;height:62px;background:linear-gradient(135deg,#1a5653,#124a47);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 15px rgba(26,86,83,0.4);z-index:10000;">' +
+                '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>' +
             '</div>';
         document.body.appendChild(div);
+
+        // Event listeners
+        document.getElementById('cb-fab').onclick = toggleChat;
+        document.getElementById('cb-close').onclick = toggleChat;
+        document.getElementById('cb-send').onclick = sendText;
+        document.getElementById('cb-input').onkeypress = function(e) {
+            if (e.key === 'Enter') sendText();
+        };
+        document.getElementById('cf-submit').onclick = submitForm;
     }
 
-    // Toggle
-    window.cbToggle = function() {
-        var win = document.getElementById('cb-window');
-        if (win.style.display === 'none') {
-            win.style.display = 'block';
-            if (!chatId) initChat();
-        } else {
-            win.style.display = 'none';
-        }
-    };
+    // ==========================================
+    // Toggle ouverture/fermeture
+    // ==========================================
+    function toggleChat() {
+        var win = document.getElementById('cb-win');
+        var isOpen = win.style.display === 'flex';
+        win.style.display = isOpen ? 'none' : 'flex';
+        if (!isOpen && !chatId) initChat();
+    }
 
-    // Init
+    // ==========================================
+    // Initialiser la conversation
+    // ==========================================
     function initChat() {
+        showTyping();
         post('action=init', function(data) {
+            hideTyping();
             if (data.error) {
-                addMsg('Erreur: ' + data.error, 'bot');
+                addMsg(data.error, 'bot');
                 return;
             }
             chatId = data.conversation_id;
             currentStep = data.step || 1;
-            
-            if (data.history && data.history.length > 0) {
+
+            if (data.is_new) {
+                addMsg(data.message, 'bot');
+                if (data.options) showOptions(data.options);
+            } else if (data.history && data.history.length) {
+                var lastButtons = null;
                 data.history.forEach(function(m) {
                     addMsg(m.message, m.type);
+                    if (m.buttons) {
+                        try {
+                            var parsed = JSON.parse(m.buttons);
+                            if (Array.isArray(parsed)) lastButtons = parsed;
+                        } catch(e) {}
+                    }
                 });
-            } else {
-                addMsg(data.message, 'bot');
-            }
-            
-            if (data.options) {
-                showButtons(data.options);
-            } else if (data.continue_options) {
-                showButtons(data.continue_options);
+                if (lastButtons) showOptions(lastButtons);
             }
         });
-    };
+    }
 
-    // Envoi bouton
-    window.cbSend = function(value, label) {
-        addMsg(label || value, 'user');
-        clearButtons();
-        
-        post('action=message&conversation_id=' + chatId + '&message=' + encodeURIComponent(value), function(data) {
-            currentStep = data.step;
-            addMsg(data.message, 'bot');
-            
-            if (data.options) {
-                hideForm();
-                showButtons(data.options);
-            } else if (data.continue_options) {
-                hideForm();
-                showButtons(data.continue_options);
-            } else if (data.type === 'force_coord' || data.urgent || data.message.indexOf('coordonnées') !== -1) {
-                showForm();
-            } else if (data.step >= 50 && data.step < 55) {
-                showForm();
-            } else {
-                hideForm();
-            }
-        });
-    };
-
-    // Envoi texte
-    window.cbSendText = function() {
+    // ==========================================
+    // Envoyer un message texte
+    // ==========================================
+    function sendText() {
         var input = document.getElementById('cb-input');
         var text = input.value.trim();
         if (!text) return;
         input.value = '';
-        window.cbSend(text, text);
-    };
+        sendMessage(text);
+    }
 
-    // Submit formulaire
-    window.cbSubmitForm = function() {
-        var prenom = document.getElementById('cb-prenom').value.trim();
-        var nom = document.getElementById('cb-nom').value.trim();
-        var email = document.getElementById('cb-email').value.trim();
-        var tel = document.getElementById('cb-tel').value.trim();
-        
-        if (!prenom || !nom || !email || !tel) {
-            alert('Veuillez remplir tous les champs obligatoires');
-            return;
-        }
-        
-        if (!validateEmail(email)) {
-            alert('Veuillez entrer un email valide');
-            return;
-        }
-        
-        addMsg('✓ Informations envoyées', 'user');
-        
-        // Envoyer via action=form
-        post('action=form&conversation_id=' + chatId + 
-             '&data=' + encodeURIComponent(JSON.stringify({
-                 prenom: prenom,
-                 nom: nom,
-                 email: email,
-                 telephone: tel
-             })), function(data) {
-            addMsg(data.message, 'bot');
-            hideForm();
+    // ==========================================
+    // Envoyer un message (texte ou valeur de bouton)
+    // ==========================================
+    function sendMessage(value, label) {
+        addMsg(label || value, 'user');
+        clearOptions();
+        showTyping();
+
+        post('action=message&conversation_id=' + chatId + '&message=' + encodeURIComponent(value), function(data) {
+            hideTyping();
+
+            if (data.error) {
+                addMsg('Erreur : ' + data.error, 'bot');
+                return;
+            }
+
+            currentStep = data.step || currentStep;
+
+            if (data.message) {
+                addMsg(data.message, 'bot');
+            }
+
+            // Afficher les options ou le formulaire selon le contexte
             if (data.options) {
-                showButtons(data.options);
+                showOptions(data.options);
+                hideForm();
+            } else if (data.type === 'final') {
+                hideForm();
+                hideInput();
+            } else if (data.retry) {
+                // Champ invalide, l'utilisateur doit resaisir
+                hideForm();
+            } else if (currentStep >= 50 && currentStep < 55 && !data.options) {
+                // Étape de saisie texte (coordonnées)
+                hideForm();
+                focusInput();
             }
         });
-    };
+    }
 
-    // Afficher message
+    // ==========================================
+    // Soumettre le formulaire HTML
+    // ==========================================
+    function submitForm() {
+        var prenom = document.getElementById('cf-prenom').value.trim();
+        var nom = document.getElementById('cf-nom').value.trim();
+        var email = document.getElementById('cf-email').value.trim();
+        var tel = document.getElementById('cf-tel').value.trim();
+
+        if (!prenom || !nom || !email || !tel) {
+            alert('Veuillez remplir tous les champs.');
+            return;
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            alert('Email invalide.');
+            return;
+        }
+
+        var btn = document.getElementById('cf-submit');
+        btn.disabled = true;
+        btn.textContent = 'Envoi...';
+        showTyping();
+
+        var payload = JSON.stringify({ prenom: prenom, nom: nom, email: email, telephone: tel });
+        post('action=form&conversation_id=' + chatId + '&data=' + encodeURIComponent(payload), function(data) {
+            hideTyping();
+            btn.disabled = false;
+            btn.textContent = 'Envoyer mes coordonnées';
+
+            if (data.error) {
+                alert('Erreur : ' + data.error);
+                return;
+            }
+
+            if (data.message) {
+                addMsg(data.message, 'bot');
+            }
+            hideForm();
+            hideInput();
+            if (data.options) showOptions(data.options);
+        });
+    }
+
+    // ==========================================
+    // Affichage des messages
+    // ==========================================
     function addMsg(text, type) {
+        if (!text) return;
+        var container = document.getElementById('cb-msgs');
         var div = document.createElement('div');
-        var isBot = type === 'bot';
-        div.style.cssText = 'margin:10px 0;padding:14px 18px;border-radius:18px;max-width:85%;font-size:14px;line-height:1.5;word-wrap:break-word;' + 
-            (isBot ? 'background:white;border:1px solid #e5e5e5;margin-right:auto;color:#333;border-bottom-left-radius:4px;box-shadow:0 2px 5px rgba(0,0,0,0.05);' : 'background:#1a5653;color:white;margin-left:auto;border-bottom-right-radius:4px;');
-        // Sanitize text before inserting as HTML
-        var safe = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-        div.innerHTML = safe.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
-        var container = document.getElementById('cb-messages');
+        var isBot = (type === 'bot');
+
+        div.style.cssText = 'margin:8px 0;padding:12px 16px;border-radius:16px;max-width:85%;font-size:14px;line-height:1.5;word-wrap:break-word;' +
+            (isBot
+                ? 'background:#fff;color:#333;margin-right:auto;border:1px solid #e8e8e8;border-bottom-left-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,0.06);'
+                : 'background:#1a5653;color:#fff;margin-left:auto;border-bottom-right-radius:4px;');
+
+        // Sanitize then format
+        var safe = text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+        div.innerHTML = safe
+            .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\n/g, '<br>');
+
         container.appendChild(div);
         container.scrollTop = container.scrollHeight;
     }
 
-    // Afficher boutons
-    function showButtons(options) {
-        var container = document.getElementById('cb-buttons');
-        container.innerHTML = '';
+    // ==========================================
+    // Boutons d'options
+    // ==========================================
+    function showOptions(options) {
         if (!options || !options.length) return;
-        
+        var container = document.getElementById('cb-msgs');
+        var wrapper = document.createElement('div');
+        wrapper.className = 'cb-options';
+        wrapper.style.cssText = 'margin:8px 0;display:flex;flex-direction:column;gap:6px;';
+
         options.forEach(function(opt) {
             var btn = document.createElement('button');
-            btn.innerHTML = opt.label;
-            btn.style.cssText = 'display:block;width:100%;padding:12px 15px;margin:6px 0;background:#f5f5f5;border:1px solid #e0e0e0;border-radius:10px;cursor:pointer;text-align:left;font-size:14px;transition:all 0.2s;';
-            btn.onmouseenter = function() { this.style.background = '#1a5653'; this.style.color = 'white'; this.style.borderColor = '#1a5653'; };
-            btn.onmouseleave = function() { this.style.background = '#f5f5f5'; this.style.color = 'inherit'; this.style.borderColor = '#e0e0e0'; };
-            btn.onclick = function() { window.cbSend(opt.value, opt.label); };
-            container.appendChild(btn);
+            btn.textContent = opt.label;
+            btn.style.cssText = 'display:block;width:100%;padding:10px 14px;background:#f5f5f5;border:1px solid #ddd;border-radius:10px;cursor:pointer;text-align:left;font-size:14px;transition:all .2s;';
+            btn.onmouseenter = function() { this.style.background = '#1a5653'; this.style.color = '#fff'; this.style.borderColor = '#1a5653'; };
+            btn.onmouseleave = function() { this.style.background = '#f5f5f5'; this.style.color = 'inherit'; this.style.borderColor = '#ddd'; };
+            btn.onclick = function() {
+                // Actions spéciales
+                if (opt.action === 'close') { toggleChat(); return; }
+                if (opt.action === 'link' && opt.url) { window.location.href = opt.url; return; }
+                // Navigation normale
+                if (opt.next) {
+                    sendMessage(opt.value, opt.label);
+                }
+            };
+            wrapper.appendChild(btn);
         });
+
+        container.appendChild(wrapper);
+        container.scrollTop = container.scrollHeight;
     }
 
-    function clearButtons() {
-        document.getElementById('cb-buttons').innerHTML = '';
+    function clearOptions() {
+        var opts = document.querySelectorAll('.cb-options');
+        for (var i = 0; i < opts.length; i++) {
+            opts[i].style.display = 'none';
+        }
     }
 
+    // ==========================================
+    // Formulaire HTML (fallback)
+    // ==========================================
     function showForm() {
-        document.getElementById('cb-buttons').style.display = 'none';
-        document.getElementById('cb-textarea').style.display = 'none';
-        document.getElementById('cb-form').style.display = 'block';
+        document.getElementById('cb-form-area').style.display = 'block';
+        document.getElementById('cb-input-area').style.display = 'none';
     }
 
     function hideForm() {
-        document.getElementById('cb-form').style.display = 'none';
-        document.getElementById('cb-buttons').style.display = 'block';
-        document.getElementById('cb-textarea').style.display = 'flex';
+        document.getElementById('cb-form-area').style.display = 'none';
+        document.getElementById('cb-input-area').style.display = 'flex';
     }
 
-    function validateEmail(email) {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    function hideInput() {
+        document.getElementById('cb-input-area').style.display = 'none';
+        document.getElementById('cb-form-area').style.display = 'none';
     }
 
-    // AJAX
+    function focusInput() {
+        var input = document.getElementById('cb-input');
+        setTimeout(function() { input.focus(); }, 100);
+    }
+
+    // ==========================================
+    // Indicateur de saisie
+    // ==========================================
+    function showTyping() {
+        var container = document.getElementById('cb-msgs');
+        var existing = document.getElementById('cb-typing');
+        if (existing) return;
+        var div = document.createElement('div');
+        div.id = 'cb-typing';
+        div.style.cssText = 'margin:8px 0;padding:12px 16px;background:#fff;border-radius:16px;border-bottom-left-radius:4px;display:inline-flex;gap:5px;align-self:flex-start;border:1px solid #e8e8e8;';
+        div.innerHTML = '<span style="width:8px;height:8px;background:#ccc;border-radius:50%;animation:cbdot 1.2s infinite;display:inline-block;"></span>' +
+                        '<span style="width:8px;height:8px;background:#ccc;border-radius:50%;animation:cbdot 1.2s .2s infinite;display:inline-block;"></span>' +
+                        '<span style="width:8px;height:8px;background:#ccc;border-radius:50%;animation:cbdot 1.2s .4s infinite;display:inline-block;"></span>';
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function hideTyping() {
+        var el = document.getElementById('cb-typing');
+        if (el) el.remove();
+    }
+
+    // ==========================================
+    // AJAX POST
+    // ==========================================
     function post(body, callback) {
         var xhr = new XMLHttpRequest();
-        xhr.open('POST', baseUrl + 'chatbot/api.php', true);
+        xhr.open('POST', apiUrl, true);
         xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        xhr.timeout = 15000;
         xhr.onreadystatechange = function() {
             if (xhr.readyState === 4) {
                 if (xhr.status === 200) {
                     try {
                         callback(JSON.parse(xhr.responseText));
                     } catch(e) {
-                        console.error('Parse error:', e, xhr.responseText);
+                        console.error('Chatbot parse error:', e, xhr.responseText);
+                        callback({ error: 'Erreur serveur' });
                     }
                 } else {
-                    console.error('HTTP error:', xhr.status);
+                    console.error('Chatbot HTTP error:', xhr.status, xhr.responseText);
+                    callback({ error: 'Erreur de connexion' });
                 }
             }
+        };
+        xhr.ontimeout = function() {
+            callback({ error: 'Délai dépassé' });
         };
         xhr.send(body);
     }
 
-    // Init
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', createWidget);
-    } else {
+    // ==========================================
+    // CSS animation pour les points
+    // ==========================================
+    function injectCSS() {
+        var style = document.createElement('style');
+        style.textContent = '@keyframes cbdot{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-8px)}}' +
+            '@media(max-width:480px){#cb-win{left:10px!important;right:10px!important;bottom:80px!important;width:auto!important;max-height:80vh!important;}}';
+        document.head.appendChild(style);
+    }
+
+    // ==========================================
+    // Initialisation
+    // ==========================================
+    function init() {
+        injectCSS();
         createWidget();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
     }
 })();
