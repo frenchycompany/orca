@@ -6,6 +6,18 @@ require_once __DIR__ . '/../includes/config.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
+// Charger les réglages chatbot
+$chatbot_config = [];
+try {
+    $stmt = $pdo->query("SELECT cle, valeur FROM config WHERE cle LIKE 'chatbot_%'");
+    while ($row = $stmt->fetch()) $chatbot_config[$row['cle']] = $row['valeur'];
+} catch (Exception $e) {}
+
+// Chatbot désactivé ?
+if (($chatbot_config['chatbot_enabled'] ?? '1') === '0') {
+    respond(['disabled' => true]);
+}
+
 $action = $_POST['action'] ?? $_GET['action'] ?? '';
 switch ($action) {
     case 'init':    handleInit(); break;
@@ -23,10 +35,24 @@ function handleInit() {
 
     if ($conv['is_new']) {
         $step = $scenario[1];
-        chatbotSaveMessage($conv['id'], 'bot', $step['message'], $step['options']);
+        $welcomeMsg = $step['message'];
+
+        // A/B test sur le message de bienvenue
+        $abTest = chatbotGetABVariant($conv['id']);
+        if ($abTest && !empty($abTest['message'])) {
+            $welcomeMsg = $abTest['message'];
+        }
+
+        chatbotSaveMessage($conv['id'], 'bot', $welcomeMsg, $step['options']);
+        global $chatbot_config;
         respond([
             'conversation_id' => $conv['id'], 'step' => 1, 'type' => 'buttons',
-            'message' => $step['message'], 'options' => $step['options'], 'is_new' => true
+            'message' => $welcomeMsg, 'options' => $step['options'], 'is_new' => true,
+            'config' => [
+                'auto_popup' => ($chatbot_config['chatbot_auto_popup'] ?? '1') === '1',
+                'popup_delay' => intval($chatbot_config['chatbot_popup_delay'] ?? 20),
+                'color' => $chatbot_config['chatbot_primary_color'] ?? '#1a5653'
+            ]
         ]);
     }
 

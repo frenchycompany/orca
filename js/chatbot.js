@@ -63,12 +63,29 @@
         q('cb-txt').onkeypress = function(e) { if (e.key === 'Enter') sendText(); };
         q('cf-btn').onclick = submitForm;
 
-        // Bulle après 8 secondes
+        // Bulle contextuelle après 6 secondes
         setTimeout(function() {
             if (q('cb-win').style.display !== 'flex') {
+                // Adapter le message selon la page
+                var path = window.location.pathname.toLowerCase();
+                var bubbleTitle = q('cb-bubble').querySelector('div:first-child');
+                var bubbleText = q('cb-bubble').querySelector('div:nth-child(2)');
+                if (path.indexOf('modele') !== -1) {
+                    bubbleTitle.textContent = '🏠 Ce modèle vous plaît ?';
+                    bubbleText.textContent = 'Je peux vous donner un prix personnalisé !';
+                } else if (path.indexOf('terrain') !== -1) {
+                    bubbleTitle.textContent = '🌿 Vous cherchez un terrain ?';
+                    bubbleText.textContent = 'J\'ai des parcelles disponibles dans votre secteur !';
+                } else if (path.indexOf('contact') !== -1) {
+                    bubbleTitle.textContent = '📞 Une question rapide ?';
+                    bubbleText.textContent = 'Je peux vous répondre tout de suite !';
+                } else if (path.indexOf('engagements') !== -1 || path.indexOf('constructeur') !== -1) {
+                    bubbleTitle.textContent = '✅ Des questions sur nos garanties ?';
+                    bubbleText.textContent = 'Je vous explique tout !';
+                }
                 q('cb-bubble').style.display = 'block';
             }
-        }, 8000);
+        }, 6000);
     }
 
     function q(id) { return document.getElementById(id); }
@@ -91,9 +108,22 @@
         showTyping();
         post('action=init', function(d) {
             hideTyping();
+            if (d.disabled) { return; } // Chatbot désactivé
             if (d.error) { addMsg(d.error, 'bot'); return; }
             chatId = d.conversation_id;
             currentStep = d.step || 1;
+
+            // Appliquer la config serveur (popup auto, délai, couleur)
+            if (d.config) {
+                if (d.config.auto_popup) {
+                    var delay = (d.config.popup_delay || 20) * 1000;
+                    setTimeout(function() {
+                        if (q('cb-win').style.display !== 'flex') {
+                            toggleChat(); // Ouvre le chat automatiquement
+                        }
+                    }, delay);
+                }
+            }
 
             if (d.is_new) {
                 addMsg(d.message, 'bot');

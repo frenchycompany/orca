@@ -450,9 +450,217 @@ function chatbotCreateLead($conversation_id, $data) {
         $pdo->prepare("UPDATE chatbot_conversations SET lead_id = ?, is_active = 0, ended_at = NOW() WHERE id = ?")
             ->execute([$lead_id, $conversation_id]);
 
+        // Notification email admin
+        chatbotNotifyAdmin($lead_id, $data);
+
         return ['lead_id' => $lead_id, 'success' => true];
     } catch (Exception $e) {
         error_log('Chatbot lead error: ' . $e->getMessage());
         return ['lead_id' => null, 'success' => false, 'error' => $e->getMessage()];
+    }
+}
+
+// ======================================================
+// NOTIFICATION EMAIL ADMIN (point 2)
+// ======================================================
+
+function chatbotNotifyAdmin($lead_id, $data) {
+    global $pdo, $site_config;
+
+    try {
+        // Vérifier que les notifs sont activées
+        $stmt = $pdo->prepare("SELECT valeur FROM config WHERE cle = 'chatbot_email_notifications'");
+        $stmt->execute();
+        $enabled = $stmt->fetchColumn();
+        if ($enabled !== '1') return;
+
+        $adminEmail = $site_config['site_email'] ?? '';
+        if (empty($adminEmail)) return;
+
+        $prenom = htmlspecialchars($data['prenom'] ?? '');
+        $nom = htmlspecialchars($data['nom'] ?? '');
+        $email = htmlspecialchars($data['email'] ?? '');
+        $tel = htmlspecialchars($data['telephone'] ?? '');
+        $dept = htmlspecialchars($data['departement'] ?? '-');
+        $budget = htmlspecialchars($data['budget'] ?? '-');
+        $surface = htmlspecialchars($data['surface'] ?? '-');
+
+        $subject = "🏠 Nouveau lead chatbot : {$prenom} {$nom}";
+
+        $body = "
+        <div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;'>
+            <div style='background:#1a5653;color:white;padding:20px;border-radius:8px 8px 0 0;'>
+                <h2 style='margin:0;'>🏠 Nouveau lead via le chatbot</h2>
+            </div>
+            <div style='background:white;padding:25px;border:1px solid #eee;border-radius:0 0 8px 8px;'>
+                <table style='width:100%;border-collapse:collapse;'>
+                    <tr><td style='padding:8px 0;color:#888;width:120px;'>Prénom :</td><td style='padding:8px 0;font-weight:bold;'>{$prenom}</td></tr>
+                    <tr><td style='padding:8px 0;color:#888;'>Nom :</td><td style='padding:8px 0;font-weight:bold;'>{$nom}</td></tr>
+                    <tr><td style='padding:8px 0;color:#888;'>Email :</td><td style='padding:8px 0;'><a href='mailto:{$email}'>{$email}</a></td></tr>
+                    <tr><td style='padding:8px 0;color:#888;'>Téléphone :</td><td style='padding:8px 0;font-weight:bold;font-size:16px;'><a href='tel:{$tel}'>{$tel}</a></td></tr>
+                    <tr><td colspan='2' style='border-top:1px solid #eee;padding-top:12px;'></td></tr>
+                    <tr><td style='padding:8px 0;color:#888;'>Département :</td><td style='padding:8px 0;'>{$dept}</td></tr>
+                    <tr><td style='padding:8px 0;color:#888;'>Surface :</td><td style='padding:8px 0;'>{$surface} m²</td></tr>
+                    <tr><td style='padding:8px 0;color:#888;'>Budget :</td><td style='padding:8px 0;'>{$budget} €</td></tr>
+                </table>
+                <div style='margin-top:20px;text-align:center;'>
+                    <a href='" . SITE_URL . "admin/lead-view.php?id={$lead_id}' style='display:inline-block;padding:12px 30px;background:#1a5653;color:white;text-decoration:none;border-radius:6px;font-weight:bold;'>Voir le lead dans l'admin</a>
+                </div>
+            </div>
+        </div>";
+
+        sendEmail($adminEmail, $subject, $body);
+    } catch (Exception $e) {
+        error_log('Chatbot email notification error: ' . $e->getMessage());
+    }
+}
+
+// ======================================================
+// A/B TESTING (point 6) - récupérer la variante pour l'accueil
+// ======================================================
+
+function chatbotGetABVariant($conversation_id) {
+    global $pdo;
+
+    try {
+        // Chercher un test actif sur le message de bienvenue
+        $stmt = $pdo->query("SELECT * FROM chatbot_ab_tests WHERE status = 'active' AND test_type = 'welcome_message' LIMIT 1");
+        $test = $stmt->fetch();
+        if (!$test) return null;
+
+        // Assigner aléatoirement A ou B
+        $variant = (mt_rand(0, 1) === 0) ? 'A' : 'B';
+
+        // Sauvegarder dans la conversation
+        $pdo->prepare("UPDATE chatbot_conversations SET ab_test_id = ?, ab_variant = ? WHERE id = ?")
+            ->execute([$test['id'], $variant, $conversation_id]);
+
+        return [
+            'test_id' => $test['id'],
+            'variant' => $variant,
+            'message' => ($variant === 'A') ? $test['variant_a_value'] : $test['variant_b_value']
+        ];
+    } catch (Exception $e) {
+        return null;
+    }
+}
+
+// ======================================================
+// FOLLOWUP / RELANCE (point 8)
+// ======================================================
+
+/**
+ * Planifier un followup pour une conversation abandonnée
+ * Appelé quand un visiteur a commencé mais n'a pas laissé ses coordonnées
+ */
+function chatbotScheduleFollowup($conversation_id) {
+    global $pdo;
+
+    try {
+        $conv = chatbotGetConversation($conversation_id);
+        if (!$conv || $conv['lead_id']) return; // Déjà converti
+
+        $data = json_decode($conv['data_collected'] ?? '{}', true) ?: [];
+        if (empty($data)) return; // Rien collecté
+
+        // Vérifier qu'il n'y a pas déjà un followup
+        $stmt = $pdo->prepare("SELECT id FROM chatbot_followups WHERE conversation_id = ? AND status = 'pending'");
+        $stmt->execute([$conversation_id]);
+        if ($stmt->fetch()) return;
+
+        // Déterminer la priorité
+        $score = intval($conv['completion_score'] ?? 0);
+        $priority = 'low';
+        if ($score >= 50) $priority = 'high';
+        elseif ($score >= 25) $priority = 'medium';
+
+        // Planifier dans 24h
+        $followupDate = date('Y-m-d H:i:s', strtotime('+24 hours'));
+
+        $prenom = $data['prenom'] ?? 'visiteur';
+        $subject = "Votre projet de maison ORCA - On reprend où on en était ?";
+        $content = chatbotBuildFollowupEmail($data);
+
+        $pdo->prepare("INSERT INTO chatbot_followups
+            (conversation_id, lead_data, followup_date, priority, status, email_subject, email_content, created_at)
+            VALUES (?, ?, ?, ?, 'pending', ?, ?, NOW())")
+            ->execute([
+                $conversation_id,
+                json_encode($data, JSON_UNESCAPED_UNICODE),
+                $followupDate,
+                $priority,
+                $subject,
+                $content
+            ]);
+    } catch (Exception $e) {
+        error_log('Chatbot followup error: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Construire l'email de relance
+ */
+function chatbotBuildFollowupEmail($data) {
+    $prenom = htmlspecialchars($data['prenom'] ?? '');
+    $greeting = $prenom ? "Bonjour {$prenom}," : "Bonjour,";
+
+    $details = '';
+    if (!empty($data['type_maison'])) $details .= "<li>Type : " . htmlspecialchars($data['type_maison']) . "</li>";
+    if (!empty($data['nb_chambres'])) $details .= "<li>Chambres : " . htmlspecialchars($data['nb_chambres']) . "</li>";
+    if (!empty($data['budget'])) $details .= "<li>Budget : " . number_format(intval($data['budget']), 0, ',', ' ') . " €</li>";
+    if (!empty($data['departement'])) $details .= "<li>Département : " . htmlspecialchars($data['departement']) . "</li>";
+
+    return "
+    <div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;'>
+        <div style='background:#1a5653;color:white;padding:20px;border-radius:8px 8px 0 0;text-align:center;'>
+            <h2 style='margin:0;'>Maisons ORCA</h2>
+        </div>
+        <div style='background:white;padding:30px;border:1px solid #eee;'>
+            <p>{$greeting}</p>
+            <p>Vous avez commencé à explorer nos maisons sur notre site. Nous avons noté vos critères :</p>
+            " . ($details ? "<ul style='line-height:1.8;'>{$details}</ul>" : "") . "
+            <p><strong>Un conseiller ORCA peut vous rappeler gratuitement</strong> pour répondre à toutes vos questions et vous accompagner dans votre projet.</p>
+            <div style='text-align:center;margin:25px 0;'>
+                <a href='" . SITE_URL . "contact.php' style='display:inline-block;padding:14px 35px;background:#1a5653;color:white;text-decoration:none;border-radius:6px;font-weight:bold;font-size:16px;'>Être rappelé gratuitement</a>
+            </div>
+            <p style='color:#888;font-size:13px;'>Cet email a été envoyé suite à votre visite sur maisons-orca.fr. Si vous ne souhaitez plus recevoir de messages, ignorez simplement cet email.</p>
+        </div>
+    </div>";
+}
+
+/**
+ * Traiter les followups en attente (à appeler via CRON)
+ * Usage: php -r "require '/var/www/orca/includes/config.php'; chatbotProcessFollowups();"
+ */
+function chatbotProcessFollowups() {
+    global $pdo, $site_config;
+
+    try {
+        $stmt = $pdo->query("SELECT f.*, c.data_collected
+            FROM chatbot_followups f
+            JOIN chatbot_conversations c ON f.conversation_id = c.id
+            WHERE f.status = 'pending' AND f.followup_date <= NOW()
+            LIMIT 10");
+        $followups = $stmt->fetchAll();
+
+        foreach ($followups as $f) {
+            $data = json_decode($f['lead_data'] ?? $f['data_collected'] ?? '{}', true) ?: [];
+            $email = $data['email'] ?? '';
+
+            if (!empty($email) && filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $sent = sendEmail($email, $f['email_subject'], $f['email_content']);
+                $status = $sent ? 'sent' : 'pending';
+            } else {
+                $status = 'cancelled'; // Pas d'email → on annule
+            }
+
+            $pdo->prepare("UPDATE chatbot_followups SET status = ?, sent_at = NOW() WHERE id = ?")
+                ->execute([$status, $f['id']]);
+        }
+
+        return count($followups);
+    } catch (Exception $e) {
+        error_log('Chatbot followup process error: ' . $e->getMessage());
+        return 0;
     }
 }
