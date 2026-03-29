@@ -118,38 +118,10 @@ function chatbotGetScenario() {
                 ['label' => 'Plus de 200 000 €', 'value' => '250000', 'next' => 50]
             ]
         ],
-        // Collecte coordonnées
+        // Formulaire de coordonnées (affiché en une seule fois)
         50 => [
-            'type' => 'text',
-            'message' => "Parfait ! Pour vous envoyer une estimation personnalisée, j'ai besoin de quelques infos.\n\nQuel est votre **prénom** ?",
-            'field' => 'prenom',
-            'next' => 51,
-            'validation' => 'name',
-            'error' => 'Veuillez entrer un prénom valide (au moins 2 lettres).'
-        ],
-        51 => [
-            'type' => 'text',
-            'message' => 'Merci ! Et votre **nom** ?',
-            'field' => 'nom',
-            'next' => 52,
-            'validation' => 'name',
-            'error' => 'Veuillez entrer un nom valide.'
-        ],
-        52 => [
-            'type' => 'text',
-            'message' => 'Votre **email** ?',
-            'field' => 'email',
-            'next' => 53,
-            'validation' => 'email',
-            'error' => 'Veuillez entrer un email valide (ex: nom@email.fr).'
-        ],
-        53 => [
-            'type' => 'text',
-            'message' => 'Et votre **numéro de téléphone** ?',
-            'field' => 'telephone',
-            'next' => 55,
-            'validation' => 'phone',
-            'error' => 'Veuillez entrer un numéro valide (ex: 06 12 34 56 78).'
+            'type' => 'form',
+            'message' => "Parfait ! Pour recevoir votre estimation personnalisée, remplissez le formulaire ci-dessous :",
         ],
         55 => [
             'type' => 'final',
@@ -312,10 +284,13 @@ function chatbotCreateLead($conversation_id, $data) {
 
     try {
         $terrainPrevu = in_array(($data['terrain'] ?? ''), ['oui', '1', 'true'], true) ? 1 : 0;
+        $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
+        $pageSource = $_SERVER['HTTP_REFERER'] ?? 'chatbot';
 
         $stmt = $pdo->prepare("INSERT INTO leads
-            (nom, prenom, email, telephone, departement, surface_souhaitee, budget_estime, terrain_prevu, source, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'chatbot', NOW())");
+            (nom, prenom, email, telephone, departement, surface_souhaitee, budget_estime,
+             terrain_prevu, type_demande, source, page_source, ip_address, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'devis', 'chatbot', ?, ?, NOW())");
 
         $stmt->execute([
             $data['nom'] ?? '',
@@ -325,7 +300,9 @@ function chatbotCreateLead($conversation_id, $data) {
             $data['departement'] ?? '',
             $data['surface'] ?? '',
             $data['budget'] ?? '',
-            $terrainPrevu
+            $terrainPrevu,
+            $pageSource,
+            $ip
         ]);
 
         $lead_id = $pdo->lastInsertId();

@@ -18,6 +18,7 @@ $offset = ($page - 1) * $per_page;
 // Filtres
 $filter_status = isset($_GET['status']) ? $_GET['status'] : '';
 $filter_type = isset($_GET['type']) ? $_GET['type'] : '';
+$filter_source = isset($_GET['source']) ? $_GET['source'] : '';
 
 // Construction de la requête
 $where = [];
@@ -32,6 +33,11 @@ if ($filter_status === 'new') {
 if ($filter_type) {
     $where[] = 'l.type_demande = ?';
     $params[] = $filter_type;
+}
+
+if ($filter_source) {
+    $where[] = 'l.source = ?';
+    $params[] = $filter_source;
 }
 
 $where_clause = !empty($where) ? 'WHERE ' . implode(' AND ', $where) : '';
@@ -83,6 +89,14 @@ include 'includes/admin-header.php';
                     <option value="info" <?php echo $filter_type == 'info' ? 'selected' : ''; ?>>Information</option>
                 </select>
             </div>
+            <div>
+                <label style="display: block; font-size: 13px; margin-bottom: 5px;">Source</label>
+                <select name="source" class="form-control" style="padding: 8px 12px; border: 1px solid var(--color-gray-light); border-radius: 6px;">
+                    <option value="">Toutes</option>
+                    <option value="chatbot" <?php echo $filter_source == 'chatbot' ? 'selected' : ''; ?>>Chatbot</option>
+                    <option value="site-web" <?php echo $filter_source == 'site-web' ? 'selected' : ''; ?>>Site web</option>
+                </select>
+            </div>
             <button type="submit" class="btn btn-primary">Filtrer</button>
             <a href="leads.php" class="btn btn-outline">Réinitialiser</a>
         </form>
@@ -114,6 +128,7 @@ include 'includes/admin-header.php';
                     <th>Nom</th>
                     <th>Contact</th>
                     <th>Type</th>
+                    <th>Source</th>
                     <th>Modèle</th>
                     <th>Localisation</th>
                     <th>Statut</th>
@@ -132,6 +147,13 @@ include 'includes/admin-header.php';
                         <a href="tel:<?php echo str_replace(' ', '', $lead['telephone']); ?>"><?php echo $lead['telephone']; ?></a>
                     </td>
                     <td><?php echo ucfirst($lead['type_demande']); ?></td>
+                    <td>
+                        <?php if ($lead['source'] === 'chatbot'): ?>
+                        <span class="badge" style="background:#1a5653;color:#fff;padding:3px 8px;border-radius:4px;font-size:11px;">Chatbot</span>
+                        <?php else: ?>
+                        <span style="font-size:12px;color:#888;"><?php echo clean($lead['source'] ?? 'site-web'); ?></span>
+                        <?php endif; ?>
+                    </td>
                     <td><?php echo $lead['modele_nom'] ?? '-'; ?></td>
                     <td><?php echo $lead['ville'] ? clean($lead['ville'] . ' (' . $lead['code_postal'] . ')') : '-'; ?></td>
                     <td>
@@ -154,13 +176,13 @@ include 'includes/admin-header.php';
         <?php if ($total_pages > 1): ?>
         <div style="display: flex; justify-content: center; gap: 10px; margin-top: 20px;">
             <?php if ($page > 1): ?>
-            <a href="?page=<?php echo $page - 1; ?>&status=<?php echo $filter_status; ?>&type=<?php echo $filter_type; ?>" class="btn btn-outline">← Précédent</a>
+            <a href="?page=<?php echo $page - 1; ?>&status=<?php echo $filter_status; ?>&type=<?php echo $filter_type; ?>&source=<?php echo $filter_source; ?>" class="btn btn-outline">← Précédent</a>
             <?php endif; ?>
             
             <span style="padding: 10px;">Page <?php echo $page; ?> / <?php echo $total_pages; ?></span>
             
             <?php if ($page < $total_pages): ?>
-            <a href="?page=<?php echo $page + 1; ?>&status=<?php echo $filter_status; ?>&type=<?php echo $filter_type; ?>" class="btn btn-outline">Suivant →</a>
+            <a href="?page=<?php echo $page + 1; ?>&status=<?php echo $filter_status; ?>&type=<?php echo $filter_type; ?>&source=<?php echo $filter_source; ?>" class="btn btn-outline">Suivant →</a>
             <?php endif; ?>
         </div>
         <?php endif; ?>

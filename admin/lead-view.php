@@ -78,6 +78,14 @@ include 'includes/admin-header.php';
                     <p><?php echo $lead['modele_nom'] ?? 'Non spécifié'; ?></p>
                 </div>
                 <div>
+                    <label style="font-size: 12px; color: var(--color-gray); text-transform: uppercase;">Surface souhaitée</label>
+                    <p><?php echo $lead['surface_souhaitee'] ? clean($lead['surface_souhaitee']) . ' m²' : 'Non renseigné'; ?></p>
+                </div>
+                <div>
+                    <label style="font-size: 12px; color: var(--color-gray); text-transform: uppercase;">Budget estimé</label>
+                    <p><?php echo $lead['budget_estime'] ? number_format(intval($lead['budget_estime']), 0, ',', ' ') . ' €' : 'Non renseigné'; ?></p>
+                </div>
+                <div>
                     <label style="font-size: 12px; color: var(--color-gray); text-transform: uppercase;">Terrain</label>
                     <p><?php echo $lead['terrain_prevu'] ? 'Oui' : 'Non, recherche en cours'; ?></p>
                 </div>
@@ -129,6 +137,13 @@ include 'includes/admin-header.php';
             
             <div class="admin-section">
                 <h3>Source</h3>
+                <p style="margin-bottom:10px;">
+                    <?php if ($lead['source'] === 'chatbot'): ?>
+                    <span style="background:#1a5653;color:#fff;padding:4px 10px;border-radius:4px;font-size:12px;font-weight:600;">Via Chatbot</span>
+                    <?php else: ?>
+                    <span style="font-size:13px;"><?php echo clean($lead['source'] ?? 'site-web'); ?></span>
+                    <?php endif; ?>
+                </p>
                 <p><strong>Page source :</strong> <?php echo $lead['page_source'] ?? '-'; ?></p>
                 <p style="margin-top: 10px;"><strong>IP :</strong> <?php echo $lead['ip_address'] ?? '-'; ?></p>
             </div>
