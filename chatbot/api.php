@@ -100,7 +100,7 @@ function handleMessage() {
     $msgCount = chatbotCountUserMessages($cid);
 
     if ($intention) {
-        // Action spéciale : recherche auto
+        // Actions spéciales : recherche auto
         if ($intention['action'] === 'search_modeles') {
             $criteria = chatbotExtractCriteria($message);
             if (!empty($criteria)) {
@@ -114,6 +114,33 @@ function handleMessage() {
                 foreach ($criteria as $k => $v) chatbotUpdateData($cid, $k, $v);
             }
             return handleSearchTerrains($cid);
+        }
+
+        // Actions de redirection vers un scénario
+        if ($intention['action'] === 'scenario_devis') {
+            $resp = $intention['response'] ?? '';
+            if ($resp) chatbotSaveMessage($cid, 'bot', $resp);
+            return goToStep($cid, 30, $scenario);
+        }
+        if ($intention['action'] === 'scenario_terrain') {
+            $resp = $intention['response'] ?? '';
+            if ($resp) chatbotSaveMessage($cid, 'bot', $resp);
+            return goToStep($cid, 20, $scenario);
+        }
+        if ($intention['action'] === 'afficher_modeles') {
+            $resp = $intention['response'] ?? '';
+            if ($resp) chatbotSaveMessage($cid, 'bot', $resp);
+            return goToStep($cid, 10, $scenario);
+        }
+        if ($intention['action'] === 'transfert_humain' || $intention['action'] === 'redirect:/contact.php') {
+            $resp = $intention['response'] ?? "Un conseiller va prendre le relais !";
+            chatbotSaveMessage($cid, 'bot', $resp);
+            chatbotUpdateStep($cid, 50);
+            respond([
+                'step' => 50,
+                'type' => 'form',
+                'message' => $resp . "\n\n👇 **Laissez vos coordonnées, on vous rappelle :**"
+            ]);
         }
 
         // Réponse textuelle (depuis BDD ou fallback)

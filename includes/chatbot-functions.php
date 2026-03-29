@@ -233,32 +233,36 @@ function chatbotGetScenario() {
 function chatbotSearchModeles($data) {
     global $pdo;
 
-    $where = ['is_active = 1'];
-    $params = [];
+    try {
+        $where = ['is_active = 1'];
+        $params = [];
 
-    $type = $data['type_maison'] ?? '';
-    if ($type && $type !== 'tous') {
-        $where[] = 'nb_etages = ?';
-        $params[] = $type;
+        $type = $data['type_maison'] ?? '';
+        if ($type && $type !== 'tous') {
+            $where[] = 'nb_etages = ?';
+            $params[] = $type;
+        }
+
+        $chambres = intval($data['nb_chambres'] ?? 0);
+        if ($chambres > 0) {
+            $where[] = 'nb_chambres >= ?';
+            $params[] = $chambres;
+        }
+
+        $budget = intval($data['budget'] ?? 0);
+        if ($budget > 0) {
+            $where[] = 'prix_base <= ?';
+            $params[] = $budget;
+        }
+
+        $sql = "SELECT nom, slug, surface_habitable, nb_chambres, nb_etages, style, prix_base, prix_afficher, slogan
+                FROM modeles WHERE " . implode(' AND ', $where) . " ORDER BY prix_base ASC LIMIT 4";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    } catch (Exception $e) {
+        return [];
     }
-
-    $chambres = intval($data['nb_chambres'] ?? 0);
-    if ($chambres > 0) {
-        $where[] = 'nb_chambres >= ?';
-        $params[] = $chambres;
-    }
-
-    $budget = intval($data['budget'] ?? 0);
-    if ($budget > 0) {
-        $where[] = 'prix_base <= ?';
-        $params[] = $budget;
-    }
-
-    $sql = "SELECT nom, slug, surface_habitable, nb_chambres, nb_etages, style, prix_base, prix_afficher, slogan
-            FROM modeles WHERE " . implode(' AND ', $where) . " ORDER BY prix_base ASC LIMIT 4";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
-    return $stmt->fetchAll();
 }
 
 /**
@@ -267,26 +271,31 @@ function chatbotSearchModeles($data) {
 function chatbotSearchTerrains($data) {
     global $pdo;
 
-    $where = ['is_available = 1'];
-    $params = [];
+    try {
+        $where = ['is_available = 1'];
+        $params = [];
 
-    $dept = $data['departement'] ?? '';
-    if ($dept) {
-        $where[] = 'departement = ?';
-        $params[] = $dept;
+        $dept = $data['departement'] ?? '';
+        if ($dept) {
+            $where[] = 'departement = ?';
+            $params[] = $dept;
+        }
+
+        $budget = intval($data['budget_terrain'] ?? 0);
+        if ($budget > 0) {
+            $where[] = 'prix <= ?';
+            $params[] = $budget;
+        }
+
+        $sql = "SELECT reference, ville, code_postal, departement, surface, prix, est_viabilise, description, proximite
+                FROM terrains WHERE " . implode(' AND ', $where) . " ORDER BY prix ASC LIMIT 5";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    } catch (Exception $e) {
+        // Table terrains pas encore créée
+        return [];
     }
-
-    $budget = intval($data['budget_terrain'] ?? 0);
-    if ($budget > 0) {
-        $where[] = 'prix <= ?';
-        $params[] = $budget;
-    }
-
-    $sql = "SELECT reference, ville, code_postal, departement, surface, prix, est_viabilise, description, proximite
-            FROM terrains WHERE " . implode(' AND ', $where) . " ORDER BY prix ASC LIMIT 5";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
-    return $stmt->fetchAll();
 }
 
 /**
