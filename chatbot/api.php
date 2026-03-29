@@ -72,139 +72,173 @@ function handleMessage() {
     $step = $scenario[$stepId] ?? null;
     $data = json_decode($conv['data_collected'] ?? '{}', true) ?: [];
 
-    // --- 1. Si étape à boutons → matcher ---
+    // --- 0. Si le message est une valeur de bouton contextuel → naviguer ---
+    $navMap = [
+        'autre' => 40, 'coord' => 50, 'maison' => 10,
+        'terrain' => 20, 'terrain_dispo' => 20, 'devis' => 30
+    ];
+    $msgLower = mb_strtolower(trim($message));
+    if (isset($navMap[$msgLower])) {
+        return goToStep($cid, $navMap[$msgLower], $scenario);
+    }
+
+    // --- 1. Si étape à boutons → matcher le clic ---
     if ($step && isset($step['options'])) {
         $matched = matchOption($message, $step['options']);
         if ($matched) {
             if (isset($step['field'])) {
                 chatbotUpdateData($cid, $step['field'], $matched['value']);
             }
-
             $next = $matched['next'];
-
-            // Étapes spéciales : recherche en BDD
-            if ($next === 'search_modeles') {
-                return handleSearchModeles($cid);
-            }
-            if ($next === 'search_terrains') {
-                return handleSearchTerrains($cid);
-            }
-
+            if ($next === 'search_modeles') return handleSearchModeles($cid);
+            if ($next === 'search_terrains') return handleSearchTerrains($cid);
             return goToStep($cid, $next, $scenario);
         }
     }
 
-    // --- 2. Mode question libre (étape 40) ou texte quelconque ---
-    // Essayer de détecter une intention
-    $intention = chatbotDetectIntention($message);
+    // --- 2. Texte libre : répondre de façon conversationnelle ---
     $msgCount = chatbotCountUserMessages($cid);
 
+    // Extraire des critères numériques du texte (chambres, budget, surface, département)
+    $criteria = chatbotExtractCriteria($message);
+    if (!empty($criteria)) {
+        foreach ($criteria as $k => $v) chatbotUpdateData($cid, $k, $v);
+    }
+
+    // Détecter l'intention (BDD puis fallback)
+    $intention = chatbotDetectIntention($message);
+
     if ($intention) {
-        // Actions spéciales : recherche auto
-        if ($intention['action'] === 'search_modeles') {
-            $criteria = chatbotExtractCriteria($message);
-            if (!empty($criteria)) {
-                foreach ($criteria as $k => $v) chatbotUpdateData($cid, $k, $v);
-            }
+        $responseText = $intention['response'] ?? '';
+        $action = $intention['action'] ?? '';
+
+        // Si on a des critères précis + intention maison/terrain → recherche directe
+        if (!empty($criteria) && $action === 'search_modeles') {
             return handleSearchModeles($cid);
         }
-        if ($intention['action'] === 'search_terrains') {
-            $criteria = chatbotExtractCriteria($message);
-            if (!empty($criteria)) {
-                foreach ($criteria as $k => $v) chatbotUpdateData($cid, $k, $v);
-            }
+        if (!empty($criteria) && $action === 'search_terrains') {
             return handleSearchTerrains($cid);
         }
 
-        // Actions de redirection vers un scénario
-        if ($intention['action'] === 'scenario_devis') {
-            $resp = $intention['response'] ?? '';
-            if ($resp) chatbotSaveMessage($cid, 'bot', $resp);
-            return goToStep($cid, 30, $scenario);
-        }
-        if ($intention['action'] === 'scenario_terrain') {
-            $resp = $intention['response'] ?? '';
-            if ($resp) chatbotSaveMessage($cid, 'bot', $resp);
-            return goToStep($cid, 20, $scenario);
-        }
-        if ($intention['action'] === 'afficher_modeles') {
-            $resp = $intention['response'] ?? '';
-            if ($resp) chatbotSaveMessage($cid, 'bot', $resp);
-            return goToStep($cid, 10, $scenario);
-        }
-        if ($intention['action'] === 'transfert_humain' || $intention['action'] === 'redirect:/contact.php') {
-            $resp = $intention['response'] ?? "Un conseiller va prendre le relais !";
-            chatbotSaveMessage($cid, 'bot', $resp);
-            chatbotUpdateStep($cid, 50);
-            respond([
-                'step' => 50,
-                'type' => 'form',
-                'message' => $resp . "\n\n👇 **Laissez vos coordonnées, on vous rappelle :**"
-            ]);
-        }
+        // Si on a une réponse textuelle → la donner d'abord, conversationnellement
+        if ($responseText) {
+            chatbotSaveMessage($cid, 'bot', $responseText);
 
-        // Réponse textuelle (depuis BDD ou fallback)
-        if ($intention['response']) {
-            chatbotSaveMessage($cid, 'bot', $intention['response']);
-
-            // Après 3+ échanges → pousser vers le formulaire
-            if ($msgCount >= 3) {
+            // Après 4+ échanges → ajouter le formulaire sous la réponse
+            if ($msgCount >= 4) {
                 chatbotUpdateStep($cid, 50);
                 respond([
                     'step' => 50,
                     'type' => 'form',
-                    'message' => $intention['response'] . "\n\n👇 **Pour aller plus loin, laissez-moi vos coordonnées :**"
+                    'message' => $responseText . "\n\n👇 **Pour aller plus loin, laissez vos coordonnées :**"
                 ]);
             }
 
+            // Sinon, répondre avec des options pour continuer la conversation
+            // Les options dépendent du contexte de la question
+            $nextOptions = buildContextualOptions($intention['key'], $stepId);
             respond([
                 'step' => $stepId,
-                'message' => $intention['response'],
-                'options' => [
-                    ['label' => '🏠 Chercher une maison', 'value' => 'maison', 'next' => 10],
-                    ['label' => '🌿 Chercher un terrain', 'value' => 'terrain', 'next' => 20],
-                    ['label' => '📋 Laisser mes coordonnées', 'value' => 'coord', 'next' => 50]
-                ]
+                'message' => $responseText,
+                'options' => $nextOptions
             ]);
+        }
+
+        // Pas de réponse texte mais une action de redirection
+        if ($action === 'search_modeles') return handleSearchModeles($cid);
+        if ($action === 'search_terrains') return handleSearchTerrains($cid);
+        if ($action === 'scenario_devis') return goToStep($cid, 30, $scenario);
+        if ($action === 'scenario_terrain') return goToStep($cid, 20, $scenario);
+        if ($action === 'afficher_modeles') return goToStep($cid, 10, $scenario);
+        if ($action === 'transfert_humain' || $action === 'redirect:/contact.php') {
+            chatbotUpdateStep($cid, 50);
+            respond(['step' => 50, 'type' => 'form', 'message' => "Un conseiller va prendre le relais !\n\n👇 **Laissez vos coordonnées :**"]);
         }
     }
 
-    // --- 3. Essayer d'extraire des critères du texte libre ---
-    $criteria = chatbotExtractCriteria($message);
+    // --- 3. Pas d'intention détectée mais des critères extraits → recherche ---
     if (!empty($criteria)) {
-        foreach ($criteria as $k => $v) chatbotUpdateData($cid, $k, $v);
-
-        // Si on a des critères maison
         if (isset($criteria['nb_chambres']) || isset($criteria['budget']) || isset($criteria['type_maison'])) {
             return handleSearchModeles($cid);
         }
-        // Si on a un département → proposer terrains
         if (isset($criteria['departement'])) {
             return handleSearchTerrains($cid);
         }
     }
 
-    // --- 4. Après 4+ messages non compris → formulaire ---
-    if ($msgCount >= 4) {
+    // --- 4. Après 5+ messages sans réponse → formulaire ---
+    if ($msgCount >= 5) {
         chatbotUpdateStep($cid, 50);
-        $msg = "Je vais être honnête : **un conseiller ORCA pourra mieux vous aider que moi !** 😊\n\nLaissez vos coordonnées, il vous rappelle sous 24h :";
+        $msg = "Je vais être honnête : **un conseiller ORCA pourra bien mieux vous aider** ! 😊\n\nLaissez vos coordonnées, il vous rappelle sous 24h :";
         chatbotSaveMessage($cid, 'bot', $msg);
         respond(['step' => 50, 'type' => 'form', 'message' => $msg]);
     }
 
-    // --- 5. Réponse par défaut ---
-    $defaultMsg = "Je n'ai pas bien compris, mais je peux vous aider ! 😊\n\nQue cherchez-vous ?";
+    // --- 5. Réponse par défaut : encourager la conversation ---
+    $defaultMsg = "Bonne question ! 😊 Je ne suis pas sûr d'avoir la réponse exacte, mais je peux vous orienter.\n\nQue souhaitez-vous savoir ?";
     chatbotSaveMessage($cid, 'bot', $defaultMsg);
     respond([
         'step' => $stepId,
         'message' => $defaultMsg,
         'options' => [
-            ['label' => '🏠 Une maison', 'value' => 'maison', 'next' => 10],
-            ['label' => '🌿 Un terrain', 'value' => 'terrain', 'next' => 20],
-            ['label' => '💰 Un devis', 'value' => 'devis', 'next' => 30],
-            ['label' => '❓ Poser une question', 'value' => 'question', 'next' => 40]
+            ['label' => '💰 Les prix des maisons', 'value' => 'prix', 'next' => 40],
+            ['label' => '🌿 Les terrains disponibles', 'value' => 'terrain_dispo', 'next' => 20],
+            ['label' => '⏱️ Les délais de construction', 'value' => 'delai', 'next' => 40],
+            ['label' => '💡 Les aides au financement', 'value' => 'financement', 'next' => 40],
+            ['label' => '📋 Être rappelé par un conseiller', 'value' => 'coord', 'next' => 50]
         ]
     ]);
+}
+
+/**
+ * Construire des options contextuelles selon l'intention détectée
+ * Le but : proposer des suites logiques à la conversation, pas rediriger brutalement
+ */
+function buildContextualOptions($intentionKey, $currentStep) {
+    $base = [
+        'prix' => [
+            ['label' => '🏠 Voir les modèles dans mon budget', 'value' => 'maison', 'next' => 10],
+            ['label' => '💰 Obtenir un devis précis', 'value' => 'devis', 'next' => 30],
+            ['label' => '❓ J\'ai une autre question', 'value' => 'autre', 'next' => 40],
+            ['label' => '📋 Être rappelé', 'value' => 'coord', 'next' => 50]
+        ],
+        'delai' => [
+            ['label' => '📋 Planifier mon projet', 'value' => 'devis', 'next' => 30],
+            ['label' => '❓ Autre question', 'value' => 'autre', 'next' => 40],
+            ['label' => '📞 Être rappelé', 'value' => 'coord', 'next' => 50]
+        ],
+        'financement' => [
+            ['label' => '💰 Simuler mon budget', 'value' => 'devis', 'next' => 30],
+            ['label' => '❓ Autre question', 'value' => 'autre', 'next' => 40],
+            ['label' => '📞 Parler à un conseiller', 'value' => 'coord', 'next' => 50]
+        ],
+        'rdv' => [
+            ['label' => '📋 Laisser mes coordonnées', 'value' => 'coord', 'next' => 50],
+            ['label' => '❓ Autre question', 'value' => 'autre', 'next' => 40]
+        ],
+        'garantie' => [
+            ['label' => '🏠 Découvrir nos modèles', 'value' => 'maison', 'next' => 10],
+            ['label' => '❓ Autre question', 'value' => 'autre', 'next' => 40],
+            ['label' => '📋 Être rappelé', 'value' => 'coord', 'next' => 50]
+        ],
+        'search_maison' => [
+            ['label' => '🏠 Voir les modèles', 'value' => 'maison', 'next' => 10],
+            ['label' => '❓ Autre question', 'value' => 'autre', 'next' => 40],
+            ['label' => '📋 Être rappelé', 'value' => 'coord', 'next' => 50]
+        ],
+        'search_terrain' => [
+            ['label' => '🌿 Voir les terrains', 'value' => 'terrain', 'next' => 20],
+            ['label' => '❓ Autre question', 'value' => 'autre', 'next' => 40],
+            ['label' => '📋 Être rappelé', 'value' => 'coord', 'next' => 50]
+        ],
+    ];
+
+    return $base[$intentionKey] ?? [
+        ['label' => '🏠 Chercher une maison', 'value' => 'maison', 'next' => 10],
+        ['label' => '🌿 Chercher un terrain', 'value' => 'terrain', 'next' => 20],
+        ['label' => '❓ Autre question', 'value' => 'autre', 'next' => 40],
+        ['label' => '📋 Être rappelé', 'value' => 'coord', 'next' => 50]
+    ];
 }
 
 // ======================================================
