@@ -1,6 +1,6 @@
 /**
- * Chatbot ORCA - Widget conversationnel
- * Questionnaire → Formulaire de coordonnées → Lead admin
+ * Chatbot ORCA - Widget intelligent
+ * Recherche maisons + terrains → Formulaire capture lead
  */
 (function() {
     'use strict';
@@ -10,319 +10,295 @@
     var apiUrl = (window.chatbotBaseUrl || '') + 'chatbot/api.php';
 
     // ==========================================
-    // Créer le widget HTML
+    // Widget HTML
     // ==========================================
     function createWidget() {
-        var div = document.createElement('div');
-        div.id = 'orca-chatbot';
-        div.innerHTML =
-            '<div id="cb-win" style="display:none;position:fixed;bottom:90px;right:20px;width:380px;background:#fff;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,0.25);z-index:10000;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;overflow:hidden;flex-direction:column;">' +
-                '<div style="background:linear-gradient(135deg,#1a5653,#124a47);color:#fff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">' +
-                    '<div><div style="font-weight:700;font-size:16px;">Assistant ORCA</div><div style="font-size:12px;opacity:.8;">En ligne</div></div>' +
-                    '<span id="cb-close" style="cursor:pointer;font-size:22px;opacity:.8;padding:4px 8px;">✕</span>' +
+        var el = document.createElement('div');
+        el.id = 'orca-cb';
+        el.innerHTML =
+            // Fenêtre chat
+            '<div id="cb-win" style="display:none;position:fixed;bottom:90px;right:20px;width:400px;background:#fff;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,0.25);z-index:10000;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;overflow:hidden;flex-direction:column;">' +
+                // Header
+                '<div style="background:linear-gradient(135deg,#1a5653,#0f3d3a);color:#fff;padding:16px 20px;display:flex;align-items:center;gap:12px;">' +
+                    '<div style="width:38px;height:38px;background:rgba(255,255,255,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;">🏠</div>' +
+                    '<div style="flex:1;"><div style="font-weight:700;font-size:15px;">Assistant ORCA</div><div style="font-size:11px;opacity:.7;">Constructeur depuis 1993</div></div>' +
+                    '<span id="cb-close" style="cursor:pointer;font-size:20px;opacity:.7;padding:4px 8px;transition:opacity .2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.7">✕</span>' +
                 '</div>' +
-                '<div id="cb-msgs" style="overflow-y:auto;padding:16px;background:#f5f7f9;min-height:200px;max-height:350px;"></div>' +
-                // Formulaire de coordonnées (caché par défaut)
-                '<div id="cb-form-area" style="display:none;padding:16px;background:#fff;border-top:1px solid #eee;">' +
-                    '<div style="font-weight:600;font-size:14px;margin-bottom:12px;color:#1a5653;">Vos coordonnées</div>' +
-                    '<input id="cf-prenom" placeholder="Prénom *" style="width:100%;padding:10px 12px;margin:4px 0;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:14px;outline:none;" onfocus="this.style.borderColor=\'#1a5653\'" onblur="this.style.borderColor=\'#ddd\'">' +
-                    '<input id="cf-nom" placeholder="Nom *" style="width:100%;padding:10px 12px;margin:4px 0;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:14px;outline:none;" onfocus="this.style.borderColor=\'#1a5653\'" onblur="this.style.borderColor=\'#ddd\'">' +
-                    '<input id="cf-email" type="email" placeholder="Email *" style="width:100%;padding:10px 12px;margin:4px 0;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:14px;outline:none;" onfocus="this.style.borderColor=\'#1a5653\'" onblur="this.style.borderColor=\'#ddd\'">' +
-                    '<input id="cf-tel" type="tel" placeholder="Téléphone * (ex: 06 12 34 56 78)" style="width:100%;padding:10px 12px;margin:4px 0;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:14px;outline:none;" onfocus="this.style.borderColor=\'#1a5653\'" onblur="this.style.borderColor=\'#ddd\'">' +
-                    '<div id="cf-error" style="display:none;color:#e74c3c;font-size:13px;margin:6px 0;"></div>' +
-                    '<button id="cf-submit" style="width:100%;padding:12px;margin-top:8px;background:#1a5653;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:15px;font-weight:700;transition:background .2s;" onmouseover="this.style.background=\'#124a47\'" onmouseout="this.style.background=\'#1a5653\'">Envoyer mes coordonnées</button>' +
+                // Messages
+                '<div id="cb-msgs" style="overflow-y:auto;padding:16px;background:#f5f7f9;min-height:200px;max-height:380px;"></div>' +
+                // Formulaire coordonnées
+                '<div id="cb-form" style="display:none;padding:14px 16px;background:#fff;border-top:1px solid #eee;">' +
+                    '<div style="font-weight:600;font-size:13px;margin-bottom:10px;color:#1a5653;">📋 Vos coordonnées</div>' +
+                    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">' +
+                        '<input id="cf-p" placeholder="Prénom *" style="padding:9px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none;">' +
+                        '<input id="cf-n" placeholder="Nom *" style="padding:9px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none;">' +
+                    '</div>' +
+                    '<input id="cf-e" type="email" placeholder="Email *" style="width:100%;padding:9px 10px;margin:6px 0;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-size:13px;outline:none;">' +
+                    '<input id="cf-t" type="tel" placeholder="Téléphone * (06 12 34 56 78)" style="width:100%;padding:9px 10px;margin:0 0 6px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-size:13px;outline:none;">' +
+                    '<div id="cf-err" style="display:none;color:#e74c3c;font-size:12px;margin-bottom:6px;"></div>' +
+                    '<button id="cf-btn" style="width:100%;padding:11px;background:linear-gradient(135deg,#1a5653,#0f3d3a);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:700;transition:opacity .2s;" onmouseover="this.style.opacity=.9" onmouseout="this.style.opacity=1">Recevoir mon estimation gratuite</button>' +
                 '</div>' +
-                // Zone de saisie texte
-                '<div id="cb-input-area" style="padding:12px 16px;background:#fff;border-top:1px solid #eee;display:flex;gap:8px;">' +
-                    '<input id="cb-input" type="text" placeholder="Votre message..." style="flex:1;padding:10px 14px;border:1px solid #ddd;border-radius:24px;font-size:14px;outline:none;" autocomplete="off">' +
-                    '<button id="cb-send" style="padding:10px 18px;background:#1a5653;color:#fff;border:none;border-radius:24px;cursor:pointer;font-size:14px;font-weight:700;">Envoyer</button>' +
+                // Zone saisie texte
+                '<div id="cb-inp" style="padding:12px 16px;background:#fff;border-top:1px solid #eee;display:flex;gap:8px;">' +
+                    '<input id="cb-txt" type="text" placeholder="Posez votre question..." style="flex:1;padding:10px 14px;border:1px solid #ddd;border-radius:24px;font-size:13px;outline:none;" autocomplete="off">' +
+                    '<button id="cb-go" style="padding:10px 16px;background:#1a5653;color:#fff;border:none;border-radius:24px;cursor:pointer;font-size:13px;font-weight:700;">Envoyer</button>' +
                 '</div>' +
             '</div>' +
             // Bouton flottant
-            '<div id="cb-fab" style="position:fixed;bottom:20px;right:20px;width:62px;height:62px;background:linear-gradient(135deg,#1a5653,#124a47);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 15px rgba(26,86,83,0.4);z-index:10000;transition:transform .2s;" onmouseover="this.style.transform=\'scale(1.1)\'" onmouseout="this.style.transform=\'scale(1)\'">' +
+            '<div id="cb-fab" style="position:fixed;bottom:20px;right:20px;width:62px;height:62px;background:linear-gradient(135deg,#1a5653,#0f3d3a);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 15px rgba(26,86,83,0.4);z-index:10000;transition:transform .2s;" onmouseover="this.style.transform=\'scale(1.1)\'" onmouseout="this.style.transform=\'scale(1)\'">' +
                 '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>' +
+            '</div>' +
+            // Bulle d\'accroche (apparait après 8s)
+            '<div id="cb-bubble" style="display:none;position:fixed;bottom:90px;right:20px;background:#fff;padding:12px 16px;border-radius:12px;box-shadow:0 4px 15px rgba(0,0,0,0.15);z-index:10000;max-width:260px;font-size:13px;cursor:pointer;animation:cbfade .4s ease;" onclick="document.getElementById(\'cb-bubble\').style.display=\'none\';toggleChat();">' +
+                '<div style="font-weight:600;color:#1a5653;">🏠 Besoin d\'aide ?</div>' +
+                '<div style="color:#555;margin-top:4px;">Je peux vous trouver la maison et le terrain idéal !</div>' +
+                '<span onclick="event.stopPropagation();document.getElementById(\'cb-bubble\').style.display=\'none\';" style="position:absolute;top:6px;right:10px;cursor:pointer;color:#999;font-size:16px;">×</span>' +
             '</div>';
-        document.body.appendChild(div);
+        document.body.appendChild(el);
 
         // Events
-        document.getElementById('cb-fab').onclick = toggleChat;
-        document.getElementById('cb-close').onclick = toggleChat;
-        document.getElementById('cb-send').onclick = sendText;
-        document.getElementById('cb-input').onkeypress = function(e) {
-            if (e.key === 'Enter') sendText();
-        };
-        document.getElementById('cf-submit').onclick = submitForm;
+        q('cb-fab').onclick = toggleChat;
+        q('cb-close').onclick = toggleChat;
+        q('cb-go').onclick = sendText;
+        q('cb-txt').onkeypress = function(e) { if (e.key === 'Enter') sendText(); };
+        q('cf-btn').onclick = submitForm;
+
+        // Bulle après 8 secondes
+        setTimeout(function() {
+            if (q('cb-win').style.display !== 'flex') {
+                q('cb-bubble').style.display = 'block';
+            }
+        }, 8000);
     }
 
+    function q(id) { return document.getElementById(id); }
+
     // ==========================================
-    // Toggle chat
+    // Toggle
     // ==========================================
     function toggleChat() {
-        var win = document.getElementById('cb-win');
-        var isOpen = win.style.display === 'flex';
-        win.style.display = isOpen ? 'none' : 'flex';
-        if (!isOpen && !chatId) initChat();
+        var win = q('cb-win');
+        var open = win.style.display === 'flex';
+        win.style.display = open ? 'none' : 'flex';
+        q('cb-bubble').style.display = 'none';
+        if (!open && !chatId) initChat();
     }
 
     // ==========================================
-    // Init conversation
+    // Init
     // ==========================================
     function initChat() {
         showTyping();
-        post('action=init', function(data) {
+        post('action=init', function(d) {
             hideTyping();
-            if (data.error) { addMsg(data.error, 'bot'); return; }
+            if (d.error) { addMsg(d.error, 'bot'); return; }
+            chatId = d.conversation_id;
+            currentStep = d.step || 1;
 
-            chatId = data.conversation_id;
-            currentStep = data.step || 1;
-
-            if (data.is_new) {
-                addMsg(data.message, 'bot');
-                if (data.options) showOptions(data.options);
-            } else if (data.history && data.history.length) {
-                data.history.forEach(function(m) {
-                    addMsg(m.message, m.type);
-                });
-                // Si on était sur le formulaire, le réafficher
-                if (data.type === 'form') {
-                    showFormArea();
-                }
+            if (d.is_new) {
+                addMsg(d.message, 'bot');
+                if (d.options) showBtns(d.options);
+            } else if (d.history && d.history.length) {
+                d.history.forEach(function(m) { addMsg(m.message, m.type); });
+                if (d.type === 'form' || d.type === 'results_then_form') showForm();
             }
         });
     }
 
     // ==========================================
-    // Envoyer texte libre
+    // Envoyer texte
     // ==========================================
     function sendText() {
-        var input = document.getElementById('cb-input');
-        var text = input.value.trim();
-        if (!text) return;
-        input.value = '';
-        sendMessage(text);
+        var inp = q('cb-txt');
+        var txt = inp.value.trim();
+        if (!txt) return;
+        inp.value = '';
+        send(txt);
     }
 
-    // ==========================================
-    // Envoyer un message (texte ou bouton)
-    // ==========================================
-    function sendMessage(value, label) {
-        addMsg(label || value, 'user');
-        clearOptions();
+    function send(val, label) {
+        addMsg(label || val, 'user');
+        clearBtns();
+        hideForm();
         showTyping();
 
-        post('action=message&conversation_id=' + chatId + '&message=' + encodeURIComponent(value), function(data) {
+        post('action=message&conversation_id=' + chatId + '&message=' + encodeURIComponent(val), function(d) {
             hideTyping();
-            if (data.error) { addMsg('Erreur : ' + data.error, 'bot'); return; }
+            if (d.error) { addMsg(d.error, 'bot'); return; }
+            currentStep = d.step || currentStep;
+            if (d.message) addMsg(d.message, 'bot');
 
-            currentStep = data.step || currentStep;
-
-            if (data.message) addMsg(data.message, 'bot');
-
-            // Selon le type de réponse
-            if (data.type === 'form') {
-                // Afficher le formulaire de coordonnées
-                showFormArea();
-            } else if (data.type === 'final') {
-                // Conversation terminée
-                hideFormArea();
-                hideInputArea();
-                if (data.options) showOptions(data.options);
-            } else if (data.options) {
-                hideFormArea();
-                showOptions(data.options);
+            if (d.type === 'form') {
+                showForm();
+            } else if (d.type === 'results_then_form') {
+                // Afficher résultats puis formulaire après 1.5s
+                setTimeout(showForm, 1500);
+            } else if (d.type === 'final') {
+                hideForm(); hideInput();
+                if (d.options) showBtns(d.options);
+            } else if (d.options) {
+                showBtns(d.options);
             }
         });
     }
 
     // ==========================================
-    // Soumettre le formulaire de coordonnées
+    // Formulaire coordonnées
     // ==========================================
     function submitForm() {
-        var prenom = document.getElementById('cf-prenom').value.trim();
-        var nom = document.getElementById('cf-nom').value.trim();
-        var email = document.getElementById('cf-email').value.trim();
-        var tel = document.getElementById('cf-tel').value.trim();
-        var errorDiv = document.getElementById('cf-error');
+        var p = q('cf-p').value.trim(), n = q('cf-n').value.trim();
+        var e = q('cf-e').value.trim(), t = q('cf-t').value.trim();
+        var err = q('cf-err');
 
-        // Validation côté client
-        var errors = [];
-        if (!prenom || prenom.length < 2) errors.push('Prénom requis (min. 2 lettres)');
-        if (!nom || nom.length < 2) errors.push('Nom requis (min. 2 lettres)');
-        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push('Email invalide');
-        if (!tel || !/^0[1-9][\s.-]?(\d{2}[\s.-]?){4}$/.test(tel)) errors.push('Téléphone invalide (ex: 06 12 34 56 78)');
+        var errs = [];
+        if (!p || p.length < 2) errs.push('Prénom');
+        if (!n || n.length < 2) errs.push('Nom');
+        if (!e || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) errs.push('Email');
+        if (!t || !/^0[1-9][\s.-]?(\d{2}[\s.-]?){4}$/.test(t)) errs.push('Téléphone');
 
-        if (errors.length) {
-            errorDiv.textContent = errors.join('. ');
-            errorDiv.style.display = 'block';
+        if (errs.length) {
+            err.textContent = 'Champ(s) invalide(s) : ' + errs.join(', ');
+            err.style.display = 'block';
             return;
         }
-        errorDiv.style.display = 'none';
+        err.style.display = 'none';
 
-        var btn = document.getElementById('cf-submit');
-        btn.disabled = true;
-        btn.textContent = 'Envoi en cours...';
+        var btn = q('cf-btn');
+        btn.disabled = true; btn.textContent = 'Envoi...';
 
-        addMsg('Coordonnées envoyées : ' + prenom + ' ' + nom, 'user');
+        addMsg(p + ' ' + n + ' - ' + e, 'user');
         showTyping();
 
-        var payload = JSON.stringify({
-            prenom: prenom,
-            nom: nom,
-            email: email,
-            telephone: tel
-        });
-
-        post('action=form&conversation_id=' + chatId + '&data=' + encodeURIComponent(payload), function(data) {
+        var payload = JSON.stringify({ prenom: p, nom: n, email: e, telephone: t });
+        post('action=form&conversation_id=' + chatId + '&data=' + encodeURIComponent(payload), function(d) {
             hideTyping();
-            btn.disabled = false;
-            btn.textContent = 'Envoyer mes coordonnées';
+            btn.disabled = false; btn.textContent = 'Recevoir mon estimation gratuite';
 
-            if (data.error) {
-                errorDiv.textContent = data.error;
-                errorDiv.style.display = 'block';
-                return;
-            }
+            if (d.error) { err.textContent = d.error; err.style.display = 'block'; return; }
+            if (d.message) addMsg(d.message, 'bot');
 
-            if (data.message) addMsg(data.message, 'bot');
-
-            // Masquer le formulaire et la zone de saisie
-            hideFormArea();
-            hideInputArea();
-
-            // Afficher les boutons finaux (voir modèles / fermer)
-            if (data.options) showOptions(data.options);
+            hideForm(); hideInput();
+            if (d.options) showBtns(d.options);
         });
     }
 
     // ==========================================
-    // Affichage des messages
+    // Messages
     // ==========================================
     function addMsg(text, type) {
         if (!text) return;
-        var container = document.getElementById('cb-msgs');
-        var div = document.createElement('div');
-        var isBot = (type === 'bot');
+        var c = q('cb-msgs');
+        var d = document.createElement('div');
+        var bot = (type === 'bot');
 
-        div.style.cssText = 'margin:8px 0;padding:12px 16px;border-radius:16px;max-width:85%;font-size:14px;line-height:1.5;word-wrap:break-word;animation:cbfade .3s ease;' +
-            (isBot
-                ? 'background:#fff;color:#333;margin-right:auto;border:1px solid #e8e8e8;border-bottom-left-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,0.06);'
-                : 'background:#1a5653;color:#fff;margin-left:auto;border-bottom-right-radius:4px;');
+        d.style.cssText = 'margin:8px 0;padding:12px 16px;border-radius:16px;max-width:88%;font-size:13px;line-height:1.6;word-wrap:break-word;animation:cbfade .3s ease;' +
+            (bot ? 'background:#fff;color:#333;margin-right:auto;border:1px solid #e8e8e8;border-bottom-left-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,0.05);'
+                 : 'background:#1a5653;color:#fff;margin-left:auto;border-bottom-right-radius:4px;max-width:75%;');
 
-        // Sanitize puis formater markdown basique
-        var safe = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-        div.innerHTML = safe.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+        var safe = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        d.innerHTML = safe.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>').replace(/→/g,'<span style="color:#1a5653;">→</span>');
 
-        container.appendChild(div);
-        container.scrollTop = container.scrollHeight;
+        c.appendChild(d);
+        c.scrollTop = c.scrollHeight;
     }
 
     // ==========================================
-    // Boutons d'options
+    // Boutons
     // ==========================================
-    function showOptions(options) {
-        if (!options || !options.length) return;
-        var container = document.getElementById('cb-msgs');
-        var wrapper = document.createElement('div');
-        wrapper.className = 'cb-options';
-        wrapper.style.cssText = 'margin:8px 0;display:flex;flex-direction:column;gap:6px;';
+    function showBtns(opts) {
+        if (!opts || !opts.length) return;
+        var c = q('cb-msgs');
+        var w = document.createElement('div');
+        w.className = 'cb-opts';
+        w.style.cssText = 'margin:8px 0;display:flex;flex-direction:column;gap:5px;';
 
-        options.forEach(function(opt) {
-            var btn = document.createElement('button');
-            btn.textContent = opt.label;
-            btn.style.cssText = 'display:block;width:100%;padding:10px 14px;background:#f5f5f5;border:1px solid #ddd;border-radius:10px;cursor:pointer;text-align:left;font-size:14px;transition:all .2s;';
-            btn.onmouseenter = function() { this.style.background='#1a5653'; this.style.color='#fff'; this.style.borderColor='#1a5653'; };
-            btn.onmouseleave = function() { this.style.background='#f5f5f5'; this.style.color='inherit'; this.style.borderColor='#ddd'; };
-            btn.onclick = function() {
-                if (opt.action === 'close') { toggleChat(); return; }
-                if (opt.action === 'link' && opt.url) { window.location.href = opt.url; return; }
-                if (opt.next) sendMessage(opt.value, opt.label);
+        opts.forEach(function(o) {
+            var b = document.createElement('button');
+            b.textContent = o.label;
+            b.style.cssText = 'display:block;width:100%;padding:10px 14px;background:#fff;border:1.5px solid #1a5653;border-radius:10px;cursor:pointer;text-align:left;font-size:13px;color:#1a5653;font-weight:500;transition:all .15s;';
+            b.onmouseenter = function() { this.style.background='#1a5653'; this.style.color='#fff'; };
+            b.onmouseleave = function() { this.style.background='#fff'; this.style.color='#1a5653'; };
+            b.onclick = function() {
+                if (o.action === 'close') { toggleChat(); return; }
+                if (o.action === 'link' && o.url) { window.location.href = o.url; return; }
+                send(o.value, o.label);
             };
-            wrapper.appendChild(btn);
+            w.appendChild(b);
         });
-
-        container.appendChild(wrapper);
-        container.scrollTop = container.scrollHeight;
+        c.appendChild(w);
+        c.scrollTop = c.scrollHeight;
     }
 
-    function clearOptions() {
-        var opts = document.querySelectorAll('.cb-options');
-        for (var i = 0; i < opts.length; i++) opts[i].style.display = 'none';
-    }
-
-    // ==========================================
-    // Formulaire / zones de saisie
-    // ==========================================
-    function showFormArea() {
-        document.getElementById('cb-form-area').style.display = 'block';
-        document.getElementById('cb-input-area').style.display = 'none';
-        document.getElementById('cf-prenom').focus();
-    }
-
-    function hideFormArea() {
-        document.getElementById('cb-form-area').style.display = 'none';
-        document.getElementById('cb-input-area').style.display = 'flex';
-    }
-
-    function hideInputArea() {
-        document.getElementById('cb-input-area').style.display = 'none';
-        document.getElementById('cb-form-area').style.display = 'none';
+    function clearBtns() {
+        var all = document.querySelectorAll('.cb-opts');
+        for (var i = 0; i < all.length; i++) all[i].style.display = 'none';
     }
 
     // ==========================================
-    // Indicateur de frappe
+    // Form / Input visibility
+    // ==========================================
+    function showForm() {
+        q('cb-form').style.display = 'block';
+        q('cb-inp').style.display = 'none';
+        setTimeout(function() { q('cf-p').focus(); }, 200);
+    }
+    function hideForm() {
+        q('cb-form').style.display = 'none';
+        q('cb-inp').style.display = 'flex';
+    }
+    function hideInput() {
+        q('cb-inp').style.display = 'none';
+        q('cb-form').style.display = 'none';
+    }
+
+    // ==========================================
+    // Typing
     // ==========================================
     function showTyping() {
-        if (document.getElementById('cb-typing')) return;
-        var container = document.getElementById('cb-msgs');
-        var div = document.createElement('div');
-        div.id = 'cb-typing';
-        div.style.cssText = 'margin:8px 0;padding:12px 16px;background:#fff;border-radius:16px;border-bottom-left-radius:4px;display:inline-flex;gap:5px;border:1px solid #e8e8e8;';
-        div.innerHTML = '<span class="cb-dot"></span><span class="cb-dot"></span><span class="cb-dot"></span>';
-        container.appendChild(div);
-        container.scrollTop = container.scrollHeight;
+        if (q('cb-typ')) return;
+        var c = q('cb-msgs');
+        var d = document.createElement('div');
+        d.id = 'cb-typ';
+        d.style.cssText = 'margin:8px 0;padding:12px 16px;background:#fff;border-radius:16px;border-bottom-left-radius:4px;display:inline-flex;gap:5px;border:1px solid #e8e8e8;';
+        d.innerHTML = '<span class="cb-dot"></span><span class="cb-dot"></span><span class="cb-dot"></span>';
+        c.appendChild(d);
+        c.scrollTop = c.scrollHeight;
     }
-
-    function hideTyping() {
-        var el = document.getElementById('cb-typing');
-        if (el) el.remove();
-    }
+    function hideTyping() { var e = q('cb-typ'); if (e) e.remove(); }
 
     // ==========================================
     // AJAX
     // ==========================================
-    function post(body, callback) {
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', apiUrl, true);
-        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-        xhr.timeout = 15000;
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4) {
-                if (xhr.status === 200) {
-                    try { callback(JSON.parse(xhr.responseText)); }
-                    catch(e) { console.error('Chatbot parse error:', e); callback({error:'Erreur serveur'}); }
-                } else {
-                    console.error('Chatbot HTTP error:', xhr.status);
-                    callback({error:'Erreur de connexion au serveur'});
-                }
+    function post(body, cb) {
+        var x = new XMLHttpRequest();
+        x.open('POST', apiUrl, true);
+        x.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        x.timeout = 15000;
+        x.onreadystatechange = function() {
+            if (x.readyState === 4) {
+                if (x.status === 200) {
+                    try { cb(JSON.parse(x.responseText)); }
+                    catch(e) { cb({error:'Erreur serveur, réessayez.'}); }
+                } else { cb({error:'Connexion impossible.'}); }
             }
         };
-        xhr.ontimeout = function() { callback({error:'Délai dépassé'}); };
-        xhr.send(body);
+        x.ontimeout = function() { cb({error:'Délai dépassé.'}); };
+        x.send(body);
     }
 
     // ==========================================
     // CSS
     // ==========================================
     function injectCSS() {
-        var style = document.createElement('style');
-        style.textContent =
+        var s = document.createElement('style');
+        s.textContent =
             '@keyframes cbfade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}' +
             '@keyframes cbdot{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-8px)}}' +
-            '.cb-dot{width:8px;height:8px;background:#ccc;border-radius:50%;display:inline-block;animation:cbdot 1.2s infinite}' +
-            '.cb-dot:nth-child(2){animation-delay:.2s}' +
-            '.cb-dot:nth-child(3){animation-delay:.4s}' +
-            '@media(max-width:480px){#cb-win{left:10px!important;right:10px!important;bottom:80px!important;width:auto!important;}}';
-        document.head.appendChild(style);
+            '.cb-dot{width:7px;height:7px;background:#bbb;border-radius:50%;display:inline-block;animation:cbdot 1.2s infinite}' +
+            '.cb-dot:nth-child(2){animation-delay:.2s}.cb-dot:nth-child(3){animation-delay:.4s}' +
+            '#cb-form input:focus{border-color:#1a5653!important}' +
+            '@media(max-width:480px){#cb-win{left:8px!important;right:8px!important;bottom:80px!important;width:auto!important;}#cb-bubble{display:none!important;}}';
+        document.head.appendChild(s);
     }
 
     // ==========================================
