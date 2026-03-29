@@ -5,7 +5,6 @@
  */
 require_once '../includes/config.php';
 require_once '../includes/chatbot-functions.php';
-require_once '../includes/chatbot-scenarios.php';
 
 header('Content-Type: application/json');
 
@@ -292,14 +291,6 @@ function forceCoordinatesCollection($conversation_id, $lastMessage) {
             ['label' => '📧 Juste mon email', 'value' => 'email', 'next' => 61]
         ]
     ]);
-}
-
-/**
- * Vérifie si on a déjà les coordonnées
- */
-function hasCoordinates($context) {
-    $data = $context['data'] ?? [];
-    return !empty($data['email']) || !empty($data['telephone']);
 }
 
 /**

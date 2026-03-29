@@ -319,10 +319,12 @@ function chatbotCreateLead($conversation_id, $data) {
     global $pdo;
     
     try {
-        $stmt = $pdo->prepare("INSERT INTO leads 
-            (nom, prenom, email, telephone, departement, surface, budget, terrain, source, statut, created_at) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'chatbot', 'nouveau', NOW())");
-        
+        $terrainPrevu = in_array(($data['terrain'] ?? 'non'), ['oui', '1', 'true'], true) ? 1 : 0;
+
+        $stmt = $pdo->prepare("INSERT INTO leads
+            (nom, prenom, email, telephone, departement, surface_souhaitee, budget_estime, terrain_prevu, source, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'chatbot', NOW())");
+
         $stmt->execute([
             $data['nom'] ?? '',
             $data['prenom'] ?? '',
@@ -331,13 +333,13 @@ function chatbotCreateLead($conversation_id, $data) {
             $data['departement'] ?? '',
             $data['surface'] ?? '',
             $data['budget'] ?? '',
-            $data['terrain'] ?? 'non'
+            $terrainPrevu
         ]);
         
         $lead_id = $pdo->lastInsertId();
         
         // Mettre à jour conversation
-        $pdo->prepare("UPDATE chatbot_conversations SET lead_id = ?, is_active = 0, completed_at = NOW() WHERE id = ?")
+        $pdo->prepare("UPDATE chatbot_conversations SET lead_id = ?, is_active = 0, ended_at = NOW() WHERE id = ?")
             ->execute([$lead_id, $conversation_id]);
         
         return ['lead_id' => $lead_id, 'quality' => 'hot'];
@@ -362,7 +364,7 @@ function chatbotUpdateData($cid, $field, $val) {
     $stmt->execute([$cid]);
     $data = json_decode($stmt->fetchColumn() ?: '{}', true);
     $data[$field] = $val;
-    $score = min(count($data, COUNT_RECURSIVE) * 15, 100);
+    $score = min(count($data) * 15, 100);
     $stmt = $pdo->prepare("UPDATE chatbot_conversations SET data_collected = ?, completion_score = ?, last_activity = NOW() WHERE id = ?");
     $stmt->execute([json_encode($data), $score, $cid]);
 }

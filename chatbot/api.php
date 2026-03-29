@@ -294,14 +294,6 @@ function forceCoordinatesCollection($conversation_id, $lastMessage) {
 }
 
 /**
- * Vérifie si on a déjà les coordonnées
- */
-function hasCoordinates($context) {
-    $data = $context['data'] ?? [];
-    return !empty($data['email']) || !empty($data['telephone']);
-}
-
-/**
  * Matching avancé des réponses utilisateur
  */
 function matchUserResponseAdvanced($message, $options) {

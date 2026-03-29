@@ -151,7 +151,9 @@
         var isBot = type === 'bot';
         div.style.cssText = 'margin:10px 0;padding:14px 18px;border-radius:18px;max-width:85%;font-size:14px;line-height:1.5;word-wrap:break-word;' + 
             (isBot ? 'background:white;border:1px solid #e5e5e5;margin-right:auto;color:#333;border-bottom-left-radius:4px;box-shadow:0 2px 5px rgba(0,0,0,0.05);' : 'background:#1a5653;color:white;margin-left:auto;border-bottom-right-radius:4px;');
-        div.innerHTML = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+        // Sanitize text before inserting as HTML
+        var safe = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        div.innerHTML = safe.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
         var container = document.getElementById('cb-messages');
         container.appendChild(div);
         container.scrollTop = container.scrollHeight;
