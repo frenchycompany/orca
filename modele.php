@@ -239,17 +239,6 @@ include 'includes/header.php';
                 <div><div style="font-weight:700;font-size:15px;">Devis <?php echo $m_nom; ?></div><div style="font-size:11px;opacity:.7;">Estimation gratuite en 2 min</div></div>
             </div>
             <div id="mc-msgs" style="min-height:250px;max-height:380px;overflow-y:auto;padding:16px;background:#f5f7f9;"></div>
-            <div id="mc-form" style="display:none;padding:14px 16px;background:#fff;border-top:1px solid #eee;">
-                <div style="font-weight:600;font-size:13px;margin-bottom:10px;color:#1a5653;">📋 Vos coordonnées</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-                    <input id="mf-p" placeholder="Prénom *" style="padding:9px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none;">
-                    <input id="mf-n" placeholder="Nom *" style="padding:9px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none;">
-                </div>
-                <input id="mf-e" type="email" placeholder="Email *" style="width:100%;padding:9px 10px;margin:6px 0;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-size:13px;outline:none;">
-                <input id="mf-t" type="tel" placeholder="Téléphone *" style="width:100%;padding:9px 10px;margin:0 0 6px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-size:13px;outline:none;">
-                <div id="mc-err" style="display:none;color:#e74c3c;font-size:12px;margin-bottom:6px;"></div>
-                <button id="mc-submit" style="width:100%;padding:12px;background:linear-gradient(135deg,#1a5653,#0f3d3a);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:15px;font-weight:700;">Recevoir mon devis pour <?php echo $m_nom; ?></button>
-            </div>
             <div id="mc-inp" style="padding:12px 16px;background:#fff;border-top:1px solid #eee;display:flex;gap:8px;">
                 <input id="mc-input" type="text" placeholder="Votre question..." style="flex:1;padding:10px 14px;border:1px solid #ddd;border-radius:24px;font-size:13px;outline:none;" autocomplete="off">
                 <button id="mc-send" style="padding:10px 16px;background:#1a5653;color:#fff;border:none;border-radius:24px;cursor:pointer;font-size:13px;font-weight:700;">Envoyer</button>
@@ -285,7 +274,7 @@ include 'includes/header.php';
             "💰 " + modelPrix + "\n\n" +
             "Comment puis-je vous aider ?";
         addMsg(welcome, 'bot');
-        showBtns([
+        showChips([
             {label: '💰 Obtenir un devis pour ce modèle', value: 'go_form', next: 50},
             {label: '🌿 Trouver un terrain adapté', value: 'go_terrain', next: 20},
             {label: '❓ J\'ai une question', value: 'go_question', next: 40}
@@ -294,36 +283,17 @@ include 'includes/header.php';
 
     q('mc-send').onclick = function() { var t=q('mc-input').value.trim(); if(t){q('mc-input').value='';send(t);} };
     q('mc-input').onkeypress = function(e) { if(e.key==='Enter'){var t=q('mc-input').value.trim();if(t){q('mc-input').value='';send(t);}} };
-    q('mc-submit').onclick = submitForm;
-
     function send(val, label) {
-        addMsg(label||val, 'user'); clearBtns(); hideForm(); showTyping();
+        addMsg(label||val, 'user'); clearChips(); showTyping();
         post('action=message&conversation_id='+mcId+'&message='+encodeURIComponent(val), function(d) {
             hideTyping();
             if(d.error){addMsg(d.error,'bot');return;}
             mcStep=d.step||mcStep;
             if(d.message)addMsg(d.message,'bot');
-            if(d.type==='form')showForm();
-            else if(d.type==='results_then_form')setTimeout(showForm,1500);
-            else if(d.type==='final'){hideForm();hideInput();if(d.options)showBtns(d.options);}
-            else if(d.options)showBtns(d.options);
-        });
-    }
-    function submitForm() {
-        var p=q('mf-p').value.trim(),n=q('mf-n').value.trim(),e=q('mf-e').value.trim(),t=q('mf-t').value.trim(),err=q('mc-err');
-        var errs=[];
-        if(!p||p.length<2)errs.push('Prénom');if(!n||n.length<2)errs.push('Nom');
-        if(!e||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))errs.push('Email');
-        if(!t||!/^0[1-9][\s.-]?(\d{2}[\s.-]?){4}$/.test(t))errs.push('Téléphone');
-        if(errs.length){err.textContent='Champ(s) invalide(s) : '+errs.join(', ');err.style.display='block';return;}
-        err.style.display='none';
-        var btn=q('mc-submit');btn.disabled=true;btn.textContent='Envoi...';
-        addMsg(p+' '+n+' - '+e,'user');showTyping();
-        post('action=form&conversation_id='+mcId+'&data='+encodeURIComponent(JSON.stringify({prenom:p,nom:n,email:e,telephone:t})),function(d){
-            hideTyping();btn.disabled=false;btn.textContent='Recevoir mon devis pour '+modelName;
-            if(d.error){err.textContent=d.error;err.style.display='block';return;}
-            if(d.message)addMsg(d.message,'bot');
-            hideForm();hideInput();if(d.options)showBtns(d.options);
+            if(d.type==='final'){hideInput();if(d.options)showChips(d.options);}
+            else if(d.type==='results_then_form'){showChips([{label:'👍 Ça m\'intéresse',value:'coord',next:50},{label:'🔄 Autres critères',value:'autre',next:40},{label:'❓ Question',value:'go_question',next:40}]);}
+            else if(d.options)showChips(d.options);
+            if(d.field){var ph={prenom:'Votre prénom...',nom:'Votre nom...',email:'Votre email...',telephone:'06 12 34 56 78...'};q('mc-input').placeholder=ph[d.field]||'Votre message...';q('mc-input').focus();}
         });
     }
 
@@ -334,12 +304,12 @@ include 'includes/header.php';
         d.innerHTML=s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
         c.appendChild(d);c.scrollTop=c.scrollHeight;
     }
-    function showBtns(opts){
-        if(!opts||!opts.length)return;var c=q('mc-msgs'),w=document.createElement('div');w.className='mc-opts';
-        w.style.cssText='margin:8px 0;display:flex;flex-direction:column;gap:5px;';
+    function showChips(opts){
+        if(!opts||!opts.length)return;var c=q('mc-msgs'),w=document.createElement('div');w.className='mc-chips';
+        w.style.cssText='margin:8px 0;display:flex;flex-wrap:wrap;gap:6px;animation:mcfade .3s ease;';
         opts.forEach(function(o){
             var b=document.createElement('button');b.textContent=o.label;
-            b.style.cssText='display:block;width:100%;padding:10px 14px;background:#fff;border:1.5px solid #1a5653;border-radius:10px;cursor:pointer;text-align:left;font-size:13px;color:#1a5653;font-weight:500;transition:all .15s;';
+            b.style.cssText='padding:8px 14px;background:#fff;border:1.5px solid #1a5653;border-radius:20px;cursor:pointer;font-size:12px;color:#1a5653;font-weight:500;transition:all .15s;white-space:nowrap;';
             b.onmouseenter=function(){this.style.background='#1a5653';this.style.color='#fff';};
             b.onmouseleave=function(){this.style.background='#fff';this.style.color='#1a5653';};
             b.onclick=function(){
@@ -351,10 +321,8 @@ include 'includes/header.php';
         });
         c.appendChild(w);c.scrollTop=c.scrollHeight;
     }
-    function clearBtns(){var a=document.querySelectorAll('.mc-opts');for(var i=0;i<a.length;i++)a[i].style.display='none';}
-    function showForm(){q('mc-form').style.display='block';q('mc-inp').style.display='none';q('mf-p').focus();}
-    function hideForm(){q('mc-form').style.display='none';q('mc-inp').style.display='flex';}
-    function hideInput(){q('mc-inp').style.display='none';q('mc-form').style.display='none';}
+    function clearChips(){var a=document.querySelectorAll('.mc-chips');for(var i=0;i<a.length;i++)a[i].style.display='none';}
+    function hideInput(){q('mc-inp').style.display='none';}
     function showTyping(){
         if(q('mc-typ'))return;var c=q('mc-msgs'),d=document.createElement('div');d.id='mc-typ';
         d.style.cssText='margin:8px 0;padding:12px 16px;background:#fff;border-radius:16px;border-bottom-left-radius:4px;display:inline-flex;gap:5px;border:1px solid #e8e8e8;';
