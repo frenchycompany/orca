@@ -226,35 +226,6 @@ function chatbotGetScenario() {
         ]
     ];
 }
-                ['label' => '🌿 Trouver un terrain', 'value' => 'go_terrain', 'next' => 20],
-                ['label' => '📋 Recevoir une estimation', 'value' => 'go_form', 'next' => 50],
-                ['label' => '❓ J\'ai une question', 'value' => 'go_question', 'next' => 40]
-            ]
-        ],
-
-        // ===================== QUESTIONS LIBRES =====================
-        40 => [
-            'type' => 'text',
-            'message' => "Posez-moi votre question ! 😊\n\nJe connais nos maisons, les terrains disponibles, les prix, les délais, le financement...",
-        ],
-
-        // ===================== FORMULAIRE =====================
-        50 => [
-            'type' => 'form',
-            'message' => "Pour recevoir votre estimation personnalisée et être recontacté par un conseiller, remplissez ce formulaire :",
-        ],
-
-        // ===================== CONFIRMATION =====================
-        55 => [
-            'type' => 'final',
-            'message' => "🎉 **Merci {{prenom}} !**\n\nVotre demande a bien été enregistrée.\n📞 **Un conseiller ORCA vous contactera sous 24h.**",
-            'options' => [
-                ['label' => '🏠 Voir nos modèles', 'value' => 'voir_modeles', 'action' => 'link', 'url' => '/modeles.php'],
-                ['label' => '❌ Fermer', 'value' => 'fermer', 'action' => 'close']
-            ]
-        ]
-    ];
-}
 
 // ======================================================
 // RECHERCHE MODÈLES EN BDD
