@@ -104,14 +104,19 @@ if (isset($_GET['edit'])) {
 }
 
 // Messages non reconnus (top 20 les plus fréquents)
+// Exclut : valeurs de boutons, navigation, réponses trop courtes
 $unrecognized = [];
 try {
     $unrecognized = $pdo->query("SELECT message, COUNT(*) as count
         FROM chatbot_messages
         WHERE type = 'user'
         AND (intention_detected IS NULL OR intention_detected = '')
-        AND LENGTH(message) > 3
-        AND message NOT IN ('go_maison','go_terrain','go_prix','go_question','go_form','autre','coord','fermer')
+        AND LENGTH(TRIM(message)) > 3
+        AND LOWER(TRIM(message)) NOT IN ('go_maison','go_terrain','go_prix','go_question','go_form','go_form','autre','coord','fermer','voir_modeles','oui','non')
+        AND LOWER(TRIM(message)) NOT REGEXP '^[0-9]+$'
+        AND LOWER(TRIM(message)) NOT IN ('plain-pied','1-etage','tous','2','3','4','plat','en_pente','boise','constructible','oui','non','recherche',
+            'devis','modeles','rdv','maison','terrain','question','60','77','95','02','80',
+            '155000','185000','220000','250000','50000','80000','120000','150000','999999')
         GROUP BY message
         ORDER BY count DESC
         LIMIT 20")->fetchAll();

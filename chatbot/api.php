@@ -88,6 +88,7 @@ function handleMessage() {
             'autre'=>40, 'coord'=>50, 'fermer'=>55];
     $val = mb_strtolower(trim($message));
     if (isset($nav[$val])) {
+        chatbotMarkRecognized($cid, 'navigation');
         return goToStep($cid, $nav[$val], $scenario);
     }
 
@@ -95,12 +96,12 @@ function handleMessage() {
     if ($step && isset($step['options'])) {
         $matched = matchOption($message, $step['options']);
         if ($matched) {
+            chatbotMarkRecognized($cid, 'scenario_step_' . $stepId);
             if (isset($step['field'])) {
                 chatbotUpdateData($cid, $step['field'], $matched['value']);
             }
             $next = $matched['next'];
 
-            // Étapes dynamiques : résultats de recherche
             if ($next === 'results_maison') return handleResultsMaison($cid, $scenario);
             if ($next === 'results_terrain') return handleResultsTerrain($cid, $scenario);
 
@@ -113,6 +114,7 @@ function handleMessage() {
     $msgCount = chatbotCountUserMessages($cid);
 
     if ($intention) {
+        chatbotMarkRecognized($cid, $intention['key']);
         $resp = $intention['response'] ?? '';
         $act = $intention['action'] ?? '';
 

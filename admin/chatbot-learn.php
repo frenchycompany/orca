@@ -26,10 +26,16 @@ if (!$conversation) {
     exit;
 }
 
-// Récupérer les messages de l'utilisateur qui n'ont pas été reconnus (pas d'intention)
-$stmt = $pdo->prepare("SELECT * FROM chatbot_messages 
-                       WHERE conversation_id = ? AND type = 'user' 
-                       AND (intention_detected IS NULL OR intention_detected = '') 
+// Récupérer les messages utilisateur vraiment non reconnus
+// Exclut les réponses aux boutons de scénario et la navigation
+$stmt = $pdo->prepare("SELECT * FROM chatbot_messages
+                       WHERE conversation_id = ? AND type = 'user'
+                       AND (intention_detected IS NULL OR intention_detected = '')
+                       AND LENGTH(TRIM(message)) > 3
+                       AND LOWER(TRIM(message)) NOT REGEXP '^[0-9]+$'
+                       AND LOWER(TRIM(message)) NOT IN ('go_maison','go_terrain','go_prix','go_question','go_form','autre','coord','fermer','oui','non',
+                           'plain-pied','1-etage','tous','devis','modeles','rdv','maison','terrain','question',
+                           '60','77','95','02','80','155000','185000','220000','250000','50000','80000','120000','999999')
                        ORDER BY created_at ASC");
 $stmt->execute([$conv_id]);
 $unrecognized_messages = $stmt->fetchAll();

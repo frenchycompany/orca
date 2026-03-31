@@ -58,6 +58,17 @@ function chatbotSaveMessage($cid, $type, $msg, $extra = null) {
     $buttons = $extra ? json_encode($extra, JSON_UNESCAPED_UNICODE) : null;
     $pdo->prepare("INSERT INTO chatbot_messages (conversation_id, type, message, buttons, created_at) VALUES (?, ?, ?, ?, NOW())")
         ->execute([$cid, $type, $msg, $buttons]);
+    return $pdo->lastInsertId();
+}
+
+/**
+ * Marquer le dernier message utilisateur comme reconnu
+ */
+function chatbotMarkRecognized($cid, $intentionKey) {
+    global $pdo;
+    $pdo->prepare("UPDATE chatbot_messages SET intention_detected = ?
+        WHERE conversation_id = ? AND type = 'user' ORDER BY id DESC LIMIT 1")
+        ->execute([$intentionKey, $cid]);
 }
 
 function chatbotGetHistory($cid) {
@@ -314,7 +325,7 @@ function chatbotSearchTerrains($data) {
         $budget = intval($data['budget_terrain'] ?? 0);
         if ($budget > 0 && $budget < 999999) { $where[] = 'prix <= ?'; $params[] = $budget; }
 
-        $sql = "SELECT reference, ville, code_postal, departement, surface, prix, est_viabilise, proximite
+        $sql = "SELECT DISTINCT reference, ville, code_postal, departement, surface, prix, est_viabilise, proximite
                 FROM terrains WHERE " . implode(' AND ', $where) . " ORDER BY prix ASC LIMIT 5";
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
