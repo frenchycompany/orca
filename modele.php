@@ -216,21 +216,171 @@ include 'includes/header.php';
 </section>
 <?php endif; ?>
 
-<!-- Section: Formulaire dédié -->
+<!-- Section: Chatbot contextualisé -->
 <section class="section section-alt" id="devis">
     <div class="container container-narrow">
         <div class="section-header">
             <p class="section-subtitle">Devis gratuit</p>
-            <h2 class="section-title">Intéressé par ce modèle ?</h2>
-            <p class="section-text">Remplissez ce formulaire pour recevoir une estimation personnalisée sous 24h.</p>
+            <h2 class="section-title">Intéressé par <?php echo htmlspecialchars($modele['nom']); ?> ?</h2>
+            <p class="section-text">Discutez avec notre assistant pour obtenir une estimation personnalisée</p>
         </div>
-        
+
+        <?php
+        $m_nom = htmlspecialchars($modele['nom']);
+        $m_surface = $modele['surface_habitable'];
+        $m_chambres = $modele['nb_chambres'];
+        $m_prix = $modele['prix_afficher'] ?: '';
+        $m_etage = $modele['nb_etages'] === 'plain-pied' ? 'plain-pied' : 'avec étage';
+        ?>
+
+        <div id="mc-chatbot" style="background:#fff;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,0.12);overflow:hidden;max-width:520px;margin:0 auto;">
+            <div style="background:linear-gradient(135deg,#1a5653,#0f3d3a);color:#fff;padding:16px 20px;display:flex;align-items:center;gap:12px;">
+                <div style="width:40px;height:40px;background:rgba(255,255,255,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;">💬</div>
+                <div><div style="font-weight:700;font-size:15px;">Devis <?php echo $m_nom; ?></div><div style="font-size:11px;opacity:.7;">Estimation gratuite en 2 min</div></div>
+            </div>
+            <div id="mc-msgs" style="min-height:250px;max-height:380px;overflow-y:auto;padding:16px;background:#f5f7f9;"></div>
+            <div id="mc-form" style="display:none;padding:14px 16px;background:#fff;border-top:1px solid #eee;">
+                <div style="font-weight:600;font-size:13px;margin-bottom:10px;color:#1a5653;">📋 Vos coordonnées</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                    <input id="mf-p" placeholder="Prénom *" style="padding:9px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none;">
+                    <input id="mf-n" placeholder="Nom *" style="padding:9px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none;">
+                </div>
+                <input id="mf-e" type="email" placeholder="Email *" style="width:100%;padding:9px 10px;margin:6px 0;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-size:13px;outline:none;">
+                <input id="mf-t" type="tel" placeholder="Téléphone *" style="width:100%;padding:9px 10px;margin:0 0 6px;border:1px solid #ddd;border-radius:6px;box-sizing:border-box;font-size:13px;outline:none;">
+                <div id="mc-err" style="display:none;color:#e74c3c;font-size:12px;margin-bottom:6px;"></div>
+                <button id="mc-submit" style="width:100%;padding:12px;background:linear-gradient(135deg,#1a5653,#0f3d3a);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:15px;font-weight:700;">Recevoir mon devis pour <?php echo $m_nom; ?></button>
+            </div>
+            <div id="mc-inp" style="padding:12px 16px;background:#fff;border-top:1px solid #eee;display:flex;gap:8px;">
+                <input id="mc-input" type="text" placeholder="Votre question..." style="flex:1;padding:10px 14px;border:1px solid #ddd;border-radius:24px;font-size:13px;outline:none;" autocomplete="off">
+                <button id="mc-send" style="padding:10px 16px;background:#1a5653;color:#fff;border:none;border-radius:24px;cursor:pointer;font-size:13px;font-weight:700;">Envoyer</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+// Chatbot inline contextualisé pour le modèle
+(function() {
+    var mcId = null, mcStep = 1;
+    var apiUrl = '<?php echo url("chatbot/api.php"); ?>';
+    var modelName = <?php echo json_encode($m_nom); ?>;
+    var modelSurface = <?php echo json_encode($m_surface); ?>;
+    var modelChambres = <?php echo json_encode($m_chambres); ?>;
+    var modelPrix = <?php echo json_encode($m_prix); ?>;
+    var modelEtage = <?php echo json_encode($m_etage); ?>;
+
+    function q(id) { return document.getElementById(id); }
+
+    // Init avec message contextuel
+    showTyping();
+    post('action=init', function(d) {
+        hideTyping();
+        if (d.error) { addMsg(d.error, 'bot'); return; }
+        mcId = d.conversation_id;
+        mcStep = d.step || 1;
+
+        // Message contextuel basé sur le modèle
+        var welcome = "Vous regardez **" + modelName + "** ! Excellent choix 👍\n\n" +
+            "📐 " + modelSurface + "m², " + modelChambres + " chambres, " + modelEtage + "\n" +
+            "💰 " + modelPrix + "\n\n" +
+            "Comment puis-je vous aider ?";
+        addMsg(welcome, 'bot');
+        showBtns([
+            {label: '💰 Obtenir un devis pour ce modèle', value: 'go_form', next: 50},
+            {label: '🌿 Trouver un terrain adapté', value: 'go_terrain', next: 20},
+            {label: '❓ J\'ai une question', value: 'go_question', next: 40}
+        ]);
+    });
+
+    q('mc-send').onclick = function() { var t=q('mc-input').value.trim(); if(t){q('mc-input').value='';send(t);} };
+    q('mc-input').onkeypress = function(e) { if(e.key==='Enter'){var t=q('mc-input').value.trim();if(t){q('mc-input').value='';send(t);}} };
+    q('mc-submit').onclick = submitForm;
+
+    function send(val, label) {
+        addMsg(label||val, 'user'); clearBtns(); hideForm(); showTyping();
+        post('action=message&conversation_id='+mcId+'&message='+encodeURIComponent(val), function(d) {
+            hideTyping();
+            if(d.error){addMsg(d.error,'bot');return;}
+            mcStep=d.step||mcStep;
+            if(d.message)addMsg(d.message,'bot');
+            if(d.type==='form')showForm();
+            else if(d.type==='results_then_form')setTimeout(showForm,1500);
+            else if(d.type==='final'){hideForm();hideInput();if(d.options)showBtns(d.options);}
+            else if(d.options)showBtns(d.options);
+        });
+    }
+    function submitForm() {
+        var p=q('mf-p').value.trim(),n=q('mf-n').value.trim(),e=q('mf-e').value.trim(),t=q('mf-t').value.trim(),err=q('mc-err');
+        var errs=[];
+        if(!p||p.length<2)errs.push('Prénom');if(!n||n.length<2)errs.push('Nom');
+        if(!e||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))errs.push('Email');
+        if(!t||!/^0[1-9][\s.-]?(\d{2}[\s.-]?){4}$/.test(t))errs.push('Téléphone');
+        if(errs.length){err.textContent='Champ(s) invalide(s) : '+errs.join(', ');err.style.display='block';return;}
+        err.style.display='none';
+        var btn=q('mc-submit');btn.disabled=true;btn.textContent='Envoi...';
+        addMsg(p+' '+n+' - '+e,'user');showTyping();
+        post('action=form&conversation_id='+mcId+'&data='+encodeURIComponent(JSON.stringify({prenom:p,nom:n,email:e,telephone:t})),function(d){
+            hideTyping();btn.disabled=false;btn.textContent='Recevoir mon devis pour '+modelName;
+            if(d.error){err.textContent=d.error;err.style.display='block';return;}
+            if(d.message)addMsg(d.message,'bot');
+            hideForm();hideInput();if(d.options)showBtns(d.options);
+        });
+    }
+
+    function addMsg(text,type){
+        if(!text)return;var c=q('mc-msgs'),d=document.createElement('div');
+        d.style.cssText='margin:8px 0;padding:12px 16px;border-radius:16px;max-width:88%;font-size:13px;line-height:1.6;word-wrap:break-word;animation:mcfade .3s ease;'+(type==='bot'?'background:#fff;color:#333;margin-right:auto;border:1px solid #e8e8e8;border-bottom-left-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,0.05);':'background:#1a5653;color:#fff;margin-left:auto;border-bottom-right-radius:4px;max-width:75%;');
+        var s=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        d.innerHTML=s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+        c.appendChild(d);c.scrollTop=c.scrollHeight;
+    }
+    function showBtns(opts){
+        if(!opts||!opts.length)return;var c=q('mc-msgs'),w=document.createElement('div');w.className='mc-opts';
+        w.style.cssText='margin:8px 0;display:flex;flex-direction:column;gap:5px;';
+        opts.forEach(function(o){
+            var b=document.createElement('button');b.textContent=o.label;
+            b.style.cssText='display:block;width:100%;padding:10px 14px;background:#fff;border:1.5px solid #1a5653;border-radius:10px;cursor:pointer;text-align:left;font-size:13px;color:#1a5653;font-weight:500;transition:all .15s;';
+            b.onmouseenter=function(){this.style.background='#1a5653';this.style.color='#fff';};
+            b.onmouseleave=function(){this.style.background='#fff';this.style.color='#1a5653';};
+            b.onclick=function(){
+                if(o.action==='close')return;
+                if(o.action==='link'&&o.url){window.location.href=o.url;return;}
+                send(o.value,o.label);
+            };
+            w.appendChild(b);
+        });
+        c.appendChild(w);c.scrollTop=c.scrollHeight;
+    }
+    function clearBtns(){var a=document.querySelectorAll('.mc-opts');for(var i=0;i<a.length;i++)a[i].style.display='none';}
+    function showForm(){q('mc-form').style.display='block';q('mc-inp').style.display='none';q('mf-p').focus();}
+    function hideForm(){q('mc-form').style.display='none';q('mc-inp').style.display='flex';}
+    function hideInput(){q('mc-inp').style.display='none';q('mc-form').style.display='none';}
+    function showTyping(){
+        if(q('mc-typ'))return;var c=q('mc-msgs'),d=document.createElement('div');d.id='mc-typ';
+        d.style.cssText='margin:8px 0;padding:12px 16px;background:#fff;border-radius:16px;border-bottom-left-radius:4px;display:inline-flex;gap:5px;border:1px solid #e8e8e8;';
+        d.innerHTML='<span class="cb-dot"></span><span class="cb-dot"></span><span class="cb-dot"></span>';
+        c.appendChild(d);c.scrollTop=c.scrollHeight;
+    }
+    function hideTyping(){var e=q('mc-typ');if(e)e.remove();}
+    function post(body,cb){
+        var x=new XMLHttpRequest();x.open('POST',apiUrl,true);
+        x.setRequestHeader('Content-Type','application/x-www-form-urlencoded');x.timeout=15000;
+        x.onreadystatechange=function(){if(x.readyState===4){if(x.status===200){try{cb(JSON.parse(x.responseText));}catch(e){cb({error:'Erreur serveur'});}}else{cb({error:'Connexion impossible'});}}};
+        x.ontimeout=function(){cb({error:'Délai dépassé'});};x.send(body);
+    }
+})();
+</script>
+<style>@keyframes mcfade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}</style>
+
+<!-- Ancien formulaire masqué (fallback) -->
+<section class="section" style="display:none;" id="devis-form-fallback">
+    <div class="container container-narrow">
         <div style="background: var(--color-white); padding: var(--space-8); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);">
             <form action="<?php echo url('contact-process.php'); ?>" method="POST" data-validate>
                 <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                 <input type="hidden" name="modele_interesse" value="<?php echo $modele['id']; ?>">
                 <input type="hidden" name="type_demande" value="devis">
-                
+
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Civilité</label>

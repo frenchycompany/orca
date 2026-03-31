@@ -99,7 +99,11 @@
         win.style.display = open ? 'none' : 'flex';
         q('cb-bubble').style.display = 'none';
         if (!open && !chatId) initChat();
+        // Émettre un événement pour la bannière/exit intent
+        if (!open) window.dispatchEvent(new Event('chatbot-opened'));
     }
+    // Exposer globalement pour la bannière CTA et exit intent
+    window.cbToggleChat = toggleChat;
 
     // ==========================================
     // Init

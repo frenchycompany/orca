@@ -97,13 +97,80 @@
     
     <!-- Scripts -->
     <script src="<?php echo url('js/main.js'); ?>"></script>
-    
+
     <?php if (isset($page_js)): ?>
     <script src="<?php echo url('js/' . $page_js); ?>"></script>
     <?php endif; ?>
-    
+
+    <!-- Bannière CTA sticky -->
+    <div id="cta-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:linear-gradient(135deg,#1a5653,#0f3d3a);color:#fff;padding:12px 20px;z-index:9998;box-shadow:0 -4px 15px rgba(0,0,0,0.15);animation:ctaSlide .4s ease;">
+        <div style="max-width:900px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+            <div>
+                <div style="font-weight:700;font-size:15px;">🏠 Estimez votre maison en 2 minutes</div>
+                <div style="font-size:12px;opacity:.8;">Gratuit et sans engagement — Rappel sous 24h</div>
+            </div>
+            <button onclick="document.getElementById('cta-banner').style.display='none';if(window.cbToggleChat)window.cbToggleChat();else window.location.href='<?php echo url('estimation.php'); ?>';" style="padding:10px 24px;background:#fff;color:#1a5653;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:14px;white-space:nowrap;">Estimer mon projet →</button>
+        </div>
+        <span onclick="document.getElementById('cta-banner').style.display='none';sessionStorage.setItem('cta_closed','1');" style="position:absolute;top:8px;right:12px;cursor:pointer;opacity:.6;font-size:18px;">×</span>
+    </div>
+
+    <!-- Exit intent popup -->
+    <div id="exit-popup" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:10001;align-items:center;justify-content:center;">
+        <div style="background:#fff;border-radius:16px;max-width:440px;width:90%;padding:40px 35px;text-align:center;position:relative;animation:ctaSlide .3s ease;">
+            <span onclick="document.getElementById('exit-popup').style.display='none';sessionStorage.setItem('exit_shown','1');" style="position:absolute;top:12px;right:16px;cursor:pointer;font-size:24px;color:#999;">×</span>
+            <div style="font-size:40px;margin-bottom:15px;">⏳</div>
+            <h2 style="font-size:22px;color:#1a5653;margin-bottom:10px;">Attendez !</h2>
+            <p style="font-size:15px;color:#555;margin-bottom:20px;">Obtenez votre <strong>estimation gratuite</strong> avant de partir</p>
+            <div style="display:flex;flex-direction:column;gap:10px;text-align:left;margin-bottom:25px;padding:0 10px;">
+                <div style="font-size:14px;color:#333;">🏠 Maisons à partir de <strong>145 000 €</strong></div>
+                <div style="font-size:14px;color:#333;">📞 Rappel gratuit sous <strong>24h</strong></div>
+                <div style="font-size:14px;color:#333;">✅ <strong>Sans aucun engagement</strong></div>
+            </div>
+            <button onclick="document.getElementById('exit-popup').style.display='none';sessionStorage.setItem('exit_shown','1');if(window.cbToggleChat)window.cbToggleChat();else window.location.href='<?php echo url('estimation.php'); ?>';" style="width:100%;padding:14px;background:linear-gradient(135deg,#1a5653,#0f3d3a);color:#fff;border:none;border-radius:10px;cursor:pointer;font-size:16px;font-weight:700;">Estimer mon projet gratuitement</button>
+            <div onclick="document.getElementById('exit-popup').style.display='none';sessionStorage.setItem('exit_shown','1');" style="margin-top:12px;font-size:13px;color:#999;cursor:pointer;">Non merci, je continue ma visite</div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes ctaSlide { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+    </style>
+
+    <script>
+    // Bannière CTA : apparaît après 4 secondes si pas fermée
+    if (!sessionStorage.getItem('cta_closed')) {
+        setTimeout(function() {
+            var b = document.getElementById('cta-banner');
+            if (b) b.style.display = 'block';
+        }, 4000);
+    }
+
+    // Masquer la bannière quand le chatbot s'ouvre
+    window.addEventListener('chatbot-opened', function() {
+        var b = document.getElementById('cta-banner');
+        if (b) b.style.display = 'none';
+    });
+
+    // Exit intent (desktop uniquement, 1 fois par session)
+    if (!sessionStorage.getItem('exit_shown') && !('ontouchstart' in window)) {
+        var exitTriggered = false;
+        document.addEventListener('mouseout', function(e) {
+            if (exitTriggered) return;
+            if (e.clientY < 5 && e.relatedTarget === null) {
+                exitTriggered = true;
+                document.getElementById('exit-popup').style.display = 'flex';
+                sessionStorage.setItem('exit_shown', '1');
+            }
+        });
+    }
+    </script>
+
     <!-- Chatbot -->
+    <?php
+    // Ne pas charger le widget chatbot flottant sur la landing page estimation
+    if (basename($_SERVER['PHP_SELF']) !== 'estimation.php'):
+    ?>
     <script>window.chatbotBaseUrl = '';</script>
     <script src="js/chatbot.js"></script>
+    <?php endif; ?>
 </body>
 </html>
