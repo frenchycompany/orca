@@ -83,6 +83,11 @@ function handleMessage() {
     $step = $scenario[$stepId] ?? null;
     $data = json_decode($conv['data_collected'] ?? '{}', true) ?: [];
 
+    // --- 0. Collecte conversationnelle des coordonnées (étapes 50-53) ---
+    if ($stepId >= 50 && $stepId <= 53 && $step && isset($step['field'])) {
+        return handleCoordStep($cid, $message, $step, $stepId, $scenario);
+    }
+
     // --- 1. Navigation directe (valeurs de boutons) ---
     $nav = ['go_maison'=>10, 'go_terrain'=>20, 'go_prix'=>30, 'go_question'=>40, 'go_form'=>50,
             'autre'=>40, 'coord'=>50, 'fermer'=>55];
@@ -201,6 +206,81 @@ function handleMessage() {
             ['label' => '🌿 Chercher un terrain', 'value' => 'go_terrain', 'next' => 20],
             ['label' => '📋 Être rappelé', 'value' => 'coord', 'next' => 50]
         ]
+    ]);
+}
+
+// ======================================================
+// COLLECTE CONVERSATIONNELLE DES COORDONNÉES
+// ======================================================
+
+function handleCoordStep($cid, $message, $step, $stepId, $scenario) {
+    $field = $step['field'];
+    $value = trim($message);
+
+    // Valider
+    $validationType = $step['validation'] ?? null;
+    if ($validationType && !chatbotValidateInput($value, $validationType)) {
+        chatbotSaveMessage($cid, 'bot', $step['error'] ?? 'Hmm, je n\'ai pas compris. Réessayez ?');
+        respond([
+            'step' => $stepId,
+            'message' => $step['error'] ?? 'Hmm, je n\'ai pas compris. Réessayez ?',
+            'field' => $field,
+            'retry' => true
+        ]);
+    }
+
+    // Normaliser téléphone
+    if ($field === 'telephone') {
+        $value = chatbotNormalizePhone($value);
+    }
+
+    chatbotMarkRecognized($cid, 'coord_' . $field);
+    chatbotUpdateData($cid, $field, $value);
+
+    $nextStepId = $step['next'] ?? 55;
+
+    // Si étape suivante = 55 (finale), créer le lead
+    if ($nextStepId == 55) {
+        $conv = chatbotGetConversation($cid);
+        $allData = json_decode($conv['data_collected'] ?? '{}', true) ?: [];
+        $result = chatbotCreateLead($cid, $allData);
+
+        $finalStep = $scenario[55];
+        $msg = $finalStep['message'];
+        $msg = str_replace('{{prenom}}', htmlspecialchars($allData['prenom'] ?? ''), $msg);
+        $msg = str_replace('{{telephone}}', htmlspecialchars($allData['telephone'] ?? ''), $msg);
+
+        chatbotSaveMessage($cid, 'bot', $msg);
+        chatbotUpdateStep($cid, 55);
+
+        respond([
+            'step' => 55, 'type' => 'final', 'message' => $msg,
+            'lead_id' => $result['lead_id'] ?? null,
+            'options' => $finalStep['options'] ?? null
+        ]);
+    }
+
+    // Sinon, aller à l'étape suivante
+    $nextStep = $scenario[$nextStepId] ?? null;
+    if (!$nextStep) respond(['error' => 'Étape non trouvée']);
+
+    // Remplacer les variables dans le message
+    $conv = chatbotGetConversation($cid);
+    $allData = json_decode($conv['data_collected'] ?? '{}', true) ?: [];
+    $msg = $nextStep['message'];
+    foreach ($allData as $k => $v) {
+        $msg = str_replace('{{' . $k . '}}', htmlspecialchars($v), $msg);
+    }
+
+    chatbotUpdateStep($cid, $nextStepId);
+    chatbotSaveMessage($cid, 'bot', $msg);
+
+    respond([
+        'step' => $nextStepId,
+        'type' => $nextStep['type'] ?? 'text',
+        'message' => $msg,
+        'field' => $nextStep['field'] ?? null,
+        'options' => $nextStep['options'] ?? null
     ]);
 }
 

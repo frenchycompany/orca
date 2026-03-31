@@ -95,80 +95,137 @@ function chatbotGetScenario() {
     return [
         // ===================== ACCUEIL =====================
         1 => [
-            'type' => 'buttons',
-            'message' => "Bonjour ! 👋 Je suis l'assistant ORCA, constructeur de maisons depuis 1993.\n\nComment puis-je vous aider ?",
+            'type' => 'chips',
+            'message' => "Bonjour ! 👋 Je suis l'assistant ORCA.\n\nJe peux vous trouver la maison et le terrain idéal. Qu'est-ce qui vous ferait plaisir ?",
             'options' => [
-                ['label' => '🏠 Je cherche une maison', 'value' => 'go_maison', 'next' => 10],
-                ['label' => '🌿 Je cherche un terrain', 'value' => 'go_terrain', 'next' => 20],
-                ['label' => '💰 Connaître les prix', 'value' => 'go_prix', 'next' => 30],
-                ['label' => '❓ J\'ai une question', 'value' => 'go_question', 'next' => 40]
+                ['label' => '🏠 Une maison', 'value' => 'go_maison', 'next' => 10],
+                ['label' => '🌿 Un terrain', 'value' => 'go_terrain', 'next' => 20],
+                ['label' => '💰 Les prix', 'value' => 'go_prix', 'next' => 30],
+                ['label' => '❓ Une question', 'value' => 'go_question', 'next' => 40]
             ]
         ],
 
         // ===================== PARCOURS MAISON =====================
         10 => [
-            'type' => 'buttons',
-            'message' => 'Super ! Quel style de maison vous plaît ?',
+            'type' => 'chips',
+            'message' => "Bonne idée ! 😊 On va trouver le modèle parfait.\n\nVous préférez quel style ?",
             'field' => 'type_maison',
             'options' => [
-                ['label' => '🏠 Plain-pied (tout de plain-pied)', 'value' => 'plain-pied', 'next' => 11],
-                ['label' => '🏡 Avec étage (plus de surface)', 'value' => '1-etage', 'next' => 11],
-                ['label' => '🤷 Je ne sais pas encore', 'value' => 'tous', 'next' => 11]
+                ['label' => 'Plain-pied', 'value' => 'plain-pied', 'next' => 11],
+                ['label' => 'Avec étage', 'value' => '1-etage', 'next' => 11],
+                ['label' => 'Pas sûr', 'value' => 'tous', 'next' => 11]
             ]
         ],
         11 => [
-            'type' => 'buttons',
-            'message' => 'Combien de chambres vous faut-il ?',
+            'type' => 'chips',
+            'message' => "Noté ! Et côté chambres, il vous en faut combien ?",
             'field' => 'nb_chambres',
             'options' => [
-                ['label' => '2 chambres', 'value' => '2', 'next' => 12],
-                ['label' => '3 chambres', 'value' => '3', 'next' => 12],
-                ['label' => '4 chambres ou +', 'value' => '4', 'next' => 12]
+                ['label' => '2', 'value' => '2', 'next' => 12],
+                ['label' => '3', 'value' => '3', 'next' => 12],
+                ['label' => '4+', 'value' => '4', 'next' => 12]
             ]
         ],
         12 => [
-            'type' => 'buttons',
-            'message' => 'Quel est votre budget pour la maison (hors terrain) ?',
+            'type' => 'chips',
+            'message' => "Parfait ! Dernière question : votre budget maison (hors terrain) ?",
             'field' => 'budget',
             'options' => [
-                ['label' => 'Moins de 155 000 €', 'value' => '155000', 'next' => 'results_maison'],
-                ['label' => '155 000 - 185 000 €', 'value' => '185000', 'next' => 'results_maison'],
-                ['label' => '185 000 - 220 000 €', 'value' => '220000', 'next' => 'results_maison'],
-                ['label' => 'Plus de 220 000 €', 'value' => '250000', 'next' => 'results_maison']
+                ['label' => '< 155k€', 'value' => '155000', 'next' => 'results_maison'],
+                ['label' => '155 - 185k€', 'value' => '185000', 'next' => 'results_maison'],
+                ['label' => '185 - 220k€', 'value' => '220000', 'next' => 'results_maison'],
+                ['label' => '> 220k€', 'value' => '250000', 'next' => 'results_maison']
             ]
         ],
 
         // ===================== PARCOURS TERRAIN =====================
         20 => [
-            'type' => 'buttons',
-            'message' => 'Dans quel département cherchez-vous un terrain ?',
+            'type' => 'chips',
+            'message' => "Je peux vous aider à trouver un terrain ! 🌿\n\nDans quel coin cherchez-vous ?",
             'field' => 'departement',
             'options' => [
-                ['label' => '60 - Oise', 'value' => '60', 'next' => 21],
-                ['label' => '77 - Seine-et-Marne', 'value' => '77', 'next' => 21],
-                ['label' => '95 - Val-d\'Oise', 'value' => '95', 'next' => 21],
-                ['label' => '02 - Aisne', 'value' => '02', 'next' => 21],
-                ['label' => '80 - Somme', 'value' => '80', 'next' => 21]
+                ['label' => 'Oise (60)', 'value' => '60', 'next' => 21],
+                ['label' => 'Seine-et-Marne (77)', 'value' => '77', 'next' => 21],
+                ['label' => 'Val-d\'Oise (95)', 'value' => '95', 'next' => 21],
+                ['label' => 'Aisne (02)', 'value' => '02', 'next' => 21],
+                ['label' => 'Somme (80)', 'value' => '80', 'next' => 21]
             ]
         ],
         21 => [
-            'type' => 'buttons',
-            'message' => 'Budget terrain ?',
+            'type' => 'chips',
+            'message' => "Top ! Et côté budget terrain, vous êtes sur quelle fourchette ?",
             'field' => 'budget_terrain',
             'options' => [
-                ['label' => 'Moins de 50 000 €', 'value' => '50000', 'next' => 'results_terrain'],
-                ['label' => '50 000 - 80 000 €', 'value' => '80000', 'next' => 'results_terrain'],
-                ['label' => '80 000 - 120 000 €', 'value' => '120000', 'next' => 'results_terrain'],
+                ['label' => '< 50k€', 'value' => '50000', 'next' => 'results_terrain'],
+                ['label' => '50 - 80k€', 'value' => '80000', 'next' => 'results_terrain'],
+                ['label' => '80 - 120k€', 'value' => '120000', 'next' => 'results_terrain'],
                 ['label' => 'Pas de limite', 'value' => '999999', 'next' => 'results_terrain']
             ]
         ],
 
         // ===================== PARCOURS PRIX =====================
         30 => [
-            'type' => 'buttons',
-            'message' => "💰 **Nos prix de départ :**\n\n🏠 **Plain-pied :**\n• Le Coquelicot (88m², 3 ch.) → 145 000 €\n• La Tulipe (95m², 3 ch.) → 152 000 €\n• L'Hibiscus (102m², 3 ch.) → 168 000 €\n\n🏡 **Avec étage :**\n• L'Orchidée (110m², 3 ch.) → 178 000 €\n• Le Lila (120m², 4 ch.) → 185 000 €\n• Le Magnolia (130m², 4 ch.) → 215 000 €\n\n*Prix hors terrain, hors options.*\n\nQue souhaitez-vous faire ?",
+            'type' => 'chips',
+            'message' => "💰 **Voici nos prix de départ :**\n\n🏠 **Plain-pied :**\n• Coquelicot 88m² → **145 000 €**\n• Tulipe 95m² → **152 000 €**\n• Hibiscus 102m² → **168 000 €**\n\n🏡 **Avec étage :**\n• Orchidée 110m² → **178 000 €**\n• Lila 120m² → **185 000 €**\n• Magnolia 130m² → **215 000 €**\n\n*Hors terrain. Souvent moins cher qu'un loyer !*",
             'options' => [
                 ['label' => '🏠 Choisir un modèle', 'value' => 'go_maison', 'next' => 10],
+                ['label' => '🌿 Trouver un terrain', 'value' => 'go_terrain', 'next' => 20],
+                ['label' => '📋 Être rappelé', 'value' => 'coord', 'next' => 50],
+                ['label' => '❓ Une question', 'value' => 'go_question', 'next' => 40]
+            ]
+        ],
+
+        // ===================== QUESTIONS LIBRES =====================
+        40 => [
+            'type' => 'text',
+            'message' => "Allez-y, posez-moi votre question ! 😊\n\nJe connais nos maisons, les terrains dispo, les prix, les délais, les aides au financement...",
+        ],
+
+        // ===================== COLLECTE COORDONNÉES (conversationnel) =====================
+        50 => [
+            'type' => 'text',
+            'field' => 'prenom',
+            'message' => "Super ! Pour vous envoyer tout ça, j'ai juste besoin de votre prénom ? 😊",
+            'validation' => 'name',
+            'error' => "Hmm, je n'ai pas bien compris votre prénom. Pouvez-vous le retaper ?",
+            'next' => 51
+        ],
+        51 => [
+            'type' => 'text',
+            'field' => 'nom',
+            'message' => "Enchanté {{prenom}} ! Et votre nom de famille ?",
+            'validation' => 'name',
+            'error' => "Je n'ai pas bien lu, votre nom ?",
+            'next' => 52
+        ],
+        52 => [
+            'type' => 'text',
+            'field' => 'email',
+            'message' => "Votre email ? (pour recevoir les documents)",
+            'validation' => 'email',
+            'error' => "Cet email ne semble pas valide. Réessayez ? (ex: nom@email.fr)",
+            'next' => 53
+        ],
+        53 => [
+            'type' => 'text',
+            'field' => 'telephone',
+            'message' => "Et votre téléphone ? (pour que le conseiller vous rappelle)",
+            'validation' => 'phone',
+            'error' => "Le numéro ne semble pas valide. Format : 06 12 34 56 78",
+            'next' => 55
+        ],
+
+        // ===================== CONFIRMATION =====================
+        55 => [
+            'type' => 'final',
+            'message' => "🎉 **C'est noté {{prenom}} !**\n\n📞 Un conseiller ORCA vous rappelle sous 24h au **{{telephone}}**.\n\nMerci pour votre confiance !",
+            'options' => [
+                ['label' => '🏠 Voir nos modèles', 'value' => 'voir_modeles', 'action' => 'link', 'url' => '/modeles.php'],
+                ['label' => 'Fermer', 'value' => 'fermer', 'action' => 'close']
+            ]
+        ]
+    ];
+}
                 ['label' => '🌿 Trouver un terrain', 'value' => 'go_terrain', 'next' => 20],
                 ['label' => '📋 Recevoir une estimation', 'value' => 'go_form', 'next' => 50],
                 ['label' => '❓ J\'ai une question', 'value' => 'go_question', 'next' => 40]
