@@ -412,6 +412,176 @@ function chatbotDetectIntention($message) {
 }
 
 // ======================================================
+// EXTRACTION INTELLIGENTE DE CRITÈRES DEPUIS UN MESSAGE
+// "je veux un terrain de 500m² dans l'oise" → departement=60, surface=500
+// ======================================================
+
+function chatbotExtractCriteria($message) {
+    $msg = mb_strtolower(trim($message));
+    $criteria = [];
+
+    // --- Département (nom ou numéro) ---
+    $deptNames = [
+        'oise' => '60', 'aisne' => '02', 'somme' => '80',
+        'seine-et-marne' => '77', 'seine et marne' => '77',
+        'val-d\'oise' => '95', 'val d\'oise' => '95', 'valdoise' => '95',
+        'essonne' => '91', 'yvelines' => '78',
+        'hauts-de-seine' => '92', 'hauts de seine' => '92',
+        'seine-saint-denis' => '93', 'seine saint denis' => '93',
+        'val-de-marne' => '94', 'val de marne' => '94',
+        'picardie' => '60', 'compiègne' => '60', 'compiegne' => '60',
+        'senlis' => '60', 'beauvais' => '60', 'creil' => '60', 'noyon' => '60',
+        'meaux' => '77', 'coulommiers' => '77',
+        'cergy' => '95', 'pontoise' => '95',
+        'laon' => '02', 'soissons' => '02', 'saint-quentin' => '02',
+        'amiens' => '80', 'abbeville' => '80',
+    ];
+    foreach ($deptNames as $name => $code) {
+        if (mb_strpos($msg, $name) !== false) {
+            $criteria['departement'] = $code;
+            break;
+        }
+    }
+    // Numéro de département brut
+    if (!isset($criteria['departement']) && preg_match('/\b(02|60|77|78|80|91|92|93|94|95)\b/', $msg, $m)) {
+        $criteria['departement'] = $m[1];
+    }
+
+    // --- Surface (m²) ---
+    if (preg_match('/(\d+)\s*(?:m²|m2|mètres?\s*carrés?|metres?\s*carres?)/i', $msg, $m)) {
+        $criteria['surface'] = intval($m[1]);
+    }
+
+    // --- Budget / prix ---
+    // "200000€", "200 000€", "200k€", "200 000 euros", "budget 200000"
+    if (preg_match('/(\d[\d\s.,]*)\s*(?:k€|k\s*euros?|k€)/i', $msg, $m)) {
+        $criteria['budget'] = intval(preg_replace('/[\s.,]/', '', $m[1])) * 1000;
+    } elseif (preg_match('/(\d[\d\s.,]*)\s*(?:€|euros?)/i', $msg, $m)) {
+        $criteria['budget'] = intval(preg_replace('/[\s.,]/', '', $m[1]));
+    } elseif (preg_match('/budget\s*(?:de\s*)?(\d[\d\s.,]*)/i', $msg, $m)) {
+        $num = intval(preg_replace('/[\s.,]/', '', $m[1]));
+        if ($num < 1000) $num *= 1000;
+        $criteria['budget'] = $num;
+    }
+
+    // --- Nombre de chambres ---
+    if (preg_match('/(\d+)\s*(?:chambres?|ch\b|pièces?\s*principales?)/i', $msg, $m)) {
+        $criteria['nb_chambres'] = intval($m[1]);
+    }
+
+    // --- Type de maison ---
+    if (preg_match('/plain[\s-]?pied/i', $msg)) {
+        $criteria['type_maison'] = 'plain-pied';
+    } elseif (preg_match('/(?:avec\s+)?étage|etage|r\+1/i', $msg)) {
+        $criteria['type_maison'] = '1-etage';
+    }
+
+    // --- Viabilisé ---
+    if (preg_match('/viabilis[ée]/i', $msg)) {
+        $criteria['viabilise'] = true;
+    }
+
+    // --- Sujet principal (terrain ou maison ?) ---
+    if (preg_match('/terrain|parcelle|foncier|constructible/i', $msg)) {
+        $criteria['_subject'] = 'terrain';
+    } elseif (preg_match('/maison|modèle|modele|construire|villa|pavillon/i', $msg)) {
+        $criteria['_subject'] = 'maison';
+    }
+
+    return $criteria;
+}
+
+/**
+ * Recherche terrains avec critères enrichis (surface, viabilisé...)
+ */
+function chatbotSearchTerrainsAdvanced($criteria) {
+    global $pdo;
+
+    try {
+        $where = ['is_available = 1'];
+        $params = [];
+
+        if (!empty($criteria['departement'])) {
+            $where[] = 'departement = ?';
+            $params[] = $criteria['departement'];
+        }
+        if (!empty($criteria['budget'])) {
+            $where[] = 'prix <= ?';
+            $params[] = intval($criteria['budget']);
+        }
+        if (!empty($criteria['surface'])) {
+            // Chercher des terrains >= surface demandée (avec marge -20%)
+            $where[] = 'surface >= ?';
+            $params[] = intval($criteria['surface'] * 0.8);
+        }
+        if (!empty($criteria['viabilise'])) {
+            $where[] = 'est_viabilise = 1';
+        }
+
+        $sql = "SELECT DISTINCT reference, ville, code_postal, departement, surface, prix, est_viabilise, proximite
+                FROM terrains WHERE " . implode(' AND ', $where) . " ORDER BY prix ASC LIMIT 5";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    } catch (Exception $e) {
+        return [];
+    }
+}
+
+/**
+ * Recherche modèles avec critères enrichis
+ */
+function chatbotSearchModelesAdvanced($criteria) {
+    global $pdo;
+
+    try {
+        $where = ['is_active = 1'];
+        $params = [];
+
+        if (!empty($criteria['type_maison']) && $criteria['type_maison'] !== 'tous') {
+            $where[] = 'nb_etages = ?';
+            $params[] = $criteria['type_maison'];
+        }
+        if (!empty($criteria['nb_chambres'])) {
+            $where[] = 'nb_chambres >= ?';
+            $params[] = intval($criteria['nb_chambres']);
+        }
+        if (!empty($criteria['budget'])) {
+            $where[] = '(prix_base IS NOT NULL AND prix_base <= ?)';
+            $params[] = intval($criteria['budget'] * 1.1);
+        }
+        if (!empty($criteria['surface'])) {
+            $where[] = 'surface_habitable >= ?';
+            $params[] = intval($criteria['surface'] * 0.85);
+        }
+
+        $sql = "SELECT nom, slug, surface_habitable, nb_chambres, nb_etages, style, prix_base, prix_afficher, slogan
+                FROM modeles WHERE " . implode(' AND ', $where) . " ORDER BY prix_base ASC LIMIT 6";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $results = $stmt->fetchAll();
+
+        // Fallback si rien trouvé : enlever le filtre budget
+        if (empty($results) && !empty($criteria['budget'])) {
+            $where2 = ['is_active = 1'];
+            $params2 = [];
+            if (!empty($criteria['type_maison']) && $criteria['type_maison'] !== 'tous') { $where2[] = 'nb_etages = ?'; $params2[] = $criteria['type_maison']; }
+            if (!empty($criteria['nb_chambres'])) { $where2[] = 'nb_chambres >= ?'; $params2[] = intval($criteria['nb_chambres']); }
+            if (!empty($criteria['surface'])) { $where2[] = 'surface_habitable >= ?'; $params2[] = intval($criteria['surface'] * 0.85); }
+            $sql2 = "SELECT nom, slug, surface_habitable, nb_chambres, nb_etages, style, prix_base, prix_afficher, slogan
+                     FROM modeles WHERE " . implode(' AND ', $where2) . " ORDER BY prix_base ASC LIMIT 6";
+            $stmt2 = $pdo->prepare($sql2);
+            $stmt2->execute($params2);
+            $results = $stmt2->fetchAll();
+        }
+
+        return $results;
+    } catch (Exception $e) {
+        return [];
+    }
+}
+
+// ======================================================
 // VALIDATION & NORMALISATION
 // ======================================================
 

@@ -109,7 +109,34 @@ function handleMessage() {
         }
     }
 
-    // --- 3. Mode question libre (étape 40 ou texte quelconque) ---
+    // --- 3. Extraction intelligente de critères multiples ---
+    $criteria = chatbotExtractCriteria($message);
+    $hasCriteria = !empty($criteria) && !empty(array_diff_key($criteria, ['_subject' => 1]));
+
+    // Si on a un sujet + des critères concrets → recherche directe
+    if ($hasCriteria) {
+        $subject = $criteria['_subject'] ?? null;
+
+        // Sauvegarder les critères extraits
+        foreach ($criteria as $k => $v) {
+            if ($k[0] !== '_') chatbotUpdateData($cid, $k, $v);
+        }
+
+        // Recherche terrain
+        if ($subject === 'terrain' || (!$subject && isset($criteria['departement']) && !isset($criteria['nb_chambres']))) {
+            chatbotMarkRecognized($cid, 'smart_search_terrain');
+            if (isset($criteria['budget'])) chatbotUpdateData($cid, 'budget_terrain', $criteria['budget']);
+            return handleSmartSearchTerrain($cid, $criteria, $scenario);
+        }
+
+        // Recherche maison
+        if ($subject === 'maison' || isset($criteria['nb_chambres']) || isset($criteria['type_maison'])) {
+            chatbotMarkRecognized($cid, 'smart_search_maison');
+            return handleSmartSearchMaison($cid, $criteria, $scenario);
+        }
+    }
+
+    // --- 4. Détection d'intention classique ---
     $intention = chatbotDetectIntention($message);
     $msgCount = chatbotCountUserMessages($cid);
 
@@ -118,7 +145,14 @@ function handleMessage() {
         $resp = $intention['response'] ?? '';
         $act = $intention['action'] ?? '';
 
-        // Si l'intention a une action de scénario
+        // Si intention terrain/maison + critères extraits → recherche enrichie
+        if ($hasCriteria && in_array($act, ['scenario_terrain', 'scenario_devis', 'afficher_modeles'])) {
+            foreach ($criteria as $k => $v) { if ($k[0] !== '_') chatbotUpdateData($cid, $k, $v); }
+            if ($act === 'scenario_terrain') return handleSmartSearchTerrain($cid, $criteria, $scenario);
+            return handleSmartSearchMaison($cid, $criteria, $scenario);
+        }
+
+        // Actions de scénario classiques
         if ($act === 'scenario_devis') { if ($resp) chatbotSaveMessage($cid, 'bot', $resp); return goToStep($cid, 30, $scenario); }
         if ($act === 'scenario_terrain') { if ($resp) chatbotSaveMessage($cid, 'bot', $resp); return goToStep($cid, 20, $scenario); }
         if ($act === 'afficher_modeles') { if ($resp) chatbotSaveMessage($cid, 'bot', $resp); return goToStep($cid, 10, $scenario); }
@@ -171,7 +205,71 @@ function handleMessage() {
 }
 
 // ======================================================
-// RÉSULTATS MAISON (après le questionnaire)
+// RECHERCHE INTELLIGENTE (depuis texte libre)
+// ======================================================
+
+function handleSmartSearchTerrain($cid, $criteria, $scenario) {
+    $results = chatbotSearchTerrainsAdvanced($criteria);
+    $text = '';
+
+    // Résumer ce qu'on a compris
+    $understood = [];
+    if (!empty($criteria['departement'])) $understood[] = 'département ' . $criteria['departement'];
+    if (!empty($criteria['surface'])) $understood[] = $criteria['surface'] . 'm²';
+    if (!empty($criteria['budget'])) $understood[] = number_format($criteria['budget'], 0, ',', ' ') . ' €';
+    if (!empty($criteria['viabilise'])) $understood[] = 'viabilisé';
+
+    if (!empty($understood)) {
+        $text .= "🔍 J'ai compris : **" . implode(', ', $understood) . "**\n\n";
+    }
+
+    $text .= chatbotFormatTerrains($results);
+
+    if (!empty($results)) {
+        $text .= "\n**Intéressé ? Laissez vos coordonnées pour les fiches détaillées !**";
+    }
+
+    chatbotSaveMessage($cid, 'bot', $text);
+    chatbotUpdateStep($cid, 50);
+    respond([
+        'step' => 50,
+        'type' => 'results_then_form',
+        'message' => $text,
+        'results_count' => count($results)
+    ]);
+}
+
+function handleSmartSearchMaison($cid, $criteria, $scenario) {
+    $results = chatbotSearchModelesAdvanced($criteria);
+    $budget = intval($criteria['budget'] ?? 0);
+    $text = '';
+
+    // Résumer ce qu'on a compris
+    $understood = [];
+    if (!empty($criteria['type_maison'])) $understood[] = $criteria['type_maison'] === 'plain-pied' ? 'plain-pied' : 'avec étage';
+    if (!empty($criteria['nb_chambres'])) $understood[] = $criteria['nb_chambres'] . ' chambres';
+    if (!empty($criteria['surface'])) $understood[] = $criteria['surface'] . 'm²';
+    if ($budget > 0) $understood[] = number_format($budget, 0, ',', ' ') . ' €';
+
+    if (!empty($understood)) {
+        $text .= "🔍 J'ai compris : **" . implode(', ', $understood) . "**\n\n";
+    }
+
+    $text .= chatbotFormatModeles($results, $budget);
+    $text .= "\n**Laissez vos coordonnées pour une estimation détaillée !**";
+
+    chatbotSaveMessage($cid, 'bot', $text);
+    chatbotUpdateStep($cid, 50);
+    respond([
+        'step' => 50,
+        'type' => 'results_then_form',
+        'message' => $text,
+        'results_count' => count($results)
+    ]);
+}
+
+// ======================================================
+// RÉSULTATS MAISON (après le questionnaire guidé)
 // ======================================================
 function handleResultsMaison($cid, $scenario) {
     $conv = chatbotGetConversation($cid);
