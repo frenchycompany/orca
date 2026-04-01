@@ -227,14 +227,37 @@ include 'includes/admin-header.php';
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
                         <div>
                             <label style="display:block;margin-bottom:4px;font-weight:500;font-size:13px;">Action</label>
-                            <select name="action" class="form-control" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;">
-                                <option value="">Répondre seulement</option>
-                                <option value="scenario_devis" <?php echo ($edit['action'] ?? '') === 'scenario_devis' ? 'selected' : ''; ?>>→ Lancer devis</option>
-                                <option value="scenario_terrain" <?php echo ($edit['action'] ?? '') === 'scenario_terrain' ? 'selected' : ''; ?>>→ Chercher terrain</option>
-                                <option value="afficher_modeles" <?php echo ($edit['action'] ?? '') === 'afficher_modeles' ? 'selected' : ''; ?>>→ Voir modèles</option>
-                                <option value="transfert_humain" <?php echo ($edit['action'] ?? '') === 'transfert_humain' ? 'selected' : ''; ?>>→ Formulaire contact</option>
-                                <option value="close" <?php echo ($edit['action'] ?? '') === 'close' ? 'selected' : ''; ?>>Fermer le chat</option>
+                            <select name="action" id="action-select" class="form-control" onchange="toggleCustomUrl()" style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;">
+                                <optgroup label="Répondre">
+                                    <option value="">💬 Répondre seulement</option>
+                                </optgroup>
+                                <optgroup label="Lancer un parcours">
+                                    <option value="scenario_devis" <?php echo ($edit['action'] ?? '') === 'scenario_devis' ? 'selected' : ''; ?>>📊 Lancer le devis</option>
+                                    <option value="scenario_terrain" <?php echo ($edit['action'] ?? '') === 'scenario_terrain' ? 'selected' : ''; ?>>🌿 Chercher un terrain</option>
+                                    <option value="afficher_modeles" <?php echo ($edit['action'] ?? '') === 'afficher_modeles' ? 'selected' : ''; ?>>🏠 Voir les modèles</option>
+                                    <option value="transfert_humain" <?php echo ($edit['action'] ?? '') === 'transfert_humain' ? 'selected' : ''; ?>>📋 Formulaire de contact</option>
+                                </optgroup>
+                                <optgroup label="Lien vers une page du site">
+                                    <option value="link:/modeles.php" <?php echo ($edit['action'] ?? '') === 'link:/modeles.php' ? 'selected' : ''; ?>>🏠 Page Modèles</option>
+                                    <option value="link:/engagements.php" <?php echo ($edit['action'] ?? '') === 'link:/engagements.php' ? 'selected' : ''; ?>>✅ Page Engagements / Garanties</option>
+                                    <option value="link:/constructeur.php" <?php echo ($edit['action'] ?? '') === 'link:/constructeur.php' ? 'selected' : ''; ?>>🏗️ Page Constructeur</option>
+                                    <option value="link:/contact.php" <?php echo ($edit['action'] ?? '') === 'link:/contact.php' ? 'selected' : ''; ?>>📞 Page Contact</option>
+                                    <option value="link:/faq.php" <?php echo ($edit['action'] ?? '') === 'link:/faq.php' ? 'selected' : ''; ?>>❓ Page FAQ</option>
+                                    <option value="link:/blog.php" <?php echo ($edit['action'] ?? '') === 'link:/blog.php' ? 'selected' : ''; ?>>📰 Page Actualités</option>
+                                    <option value="link:/estimation.php" <?php echo ($edit['action'] ?? '') === 'link:/estimation.php' ? 'selected' : ''; ?>>💰 Page Estimation</option>
+                                    <option value="custom_link" <?php echo (strpos($edit['action'] ?? '', 'link:') === 0 && !in_array($edit['action'] ?? '', ['link:/modeles.php','link:/engagements.php','link:/constructeur.php','link:/contact.php','link:/faq.php','link:/blog.php','link:/estimation.php'])) ? 'selected' : ''; ?>>🔗 URL personnalisée...</option>
+                                </optgroup>
+                                <optgroup label="Autre">
+                                    <option value="close" <?php echo ($edit['action'] ?? '') === 'close' ? 'selected' : ''; ?>>❌ Fermer le chat</option>
+                                </optgroup>
                             </select>
+                            <div id="custom-url-field" style="display:none;margin-top:6px;">
+                                <input type="text" name="custom_url" id="custom-url-input" class="form-control"
+                                    placeholder="/ma-page.php ou https://..."
+                                    value="<?php echo htmlspecialchars(str_replace('link:', '', $edit['action'] ?? '')); ?>"
+                                    style="width:100%;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;">
+                                <small style="color:#888;">URL relative (/page.php) ou absolue (https://...)</small>
+                            </div>
                         </div>
                         <div>
                             <label style="display:block;margin-bottom:4px;font-weight:500;font-size:13px;">Priorité</label>
@@ -433,8 +456,33 @@ function filterIntentions() {
     });
 }
 
-// Init preview si édition
+// Toggle URL personnalisée
+function toggleCustomUrl() {
+    var sel = document.getElementById('action-select');
+    var field = document.getElementById('custom-url-field');
+    field.style.display = sel.value === 'custom_link' ? 'block' : 'none';
+}
+
+// Init
 if (document.getElementById('response-text').value) previewResponse();
+<?php if ($edit && strpos($edit['action'] ?? '', 'link:') === 0): ?>
+toggleCustomUrl();
+<?php endif; ?>
+
+// Avant soumission : construire l'action finale
+document.querySelector('form').addEventListener('submit', function(e) {
+    var sel = document.getElementById('action-select');
+    if (sel.value === 'custom_link') {
+        var url = document.getElementById('custom-url-input').value.trim();
+        if (url) {
+            // Créer un champ hidden avec la vraie valeur
+            var h = document.createElement('input');
+            h.type = 'hidden'; h.name = 'action'; h.value = 'link:' + url;
+            this.appendChild(h);
+            sel.name = ''; // désactiver le select
+        }
+    }
+});
 </script>
 
 <?php include 'includes/admin-footer.php'; ?>

@@ -161,10 +161,26 @@ function handleMessage() {
         if ($act === 'scenario_devis') { if ($resp) chatbotSaveMessage($cid, 'bot', $resp); return goToStep($cid, 30, $scenario); }
         if ($act === 'scenario_terrain') { if ($resp) chatbotSaveMessage($cid, 'bot', $resp); return goToStep($cid, 20, $scenario); }
         if ($act === 'afficher_modeles') { if ($resp) chatbotSaveMessage($cid, 'bot', $resp); return goToStep($cid, 10, $scenario); }
-        if ($act === 'transfert_humain' || $act === 'redirect:/contact.php') {
+        if ($act === 'transfert_humain') {
             chatbotSaveMessage($cid, 'bot', $resp ?: 'Un conseiller va vous aider !');
             chatbotUpdateStep($cid, 50);
             respond(['step'=>50, 'type'=>'form', 'message'=> ($resp ?: '') . "\n\n👇 **Laissez vos coordonnées :**"]);
+        }
+
+        // Action lien vers une page du site : link:/engagements.php, link:/modeles.php, etc.
+        if (strpos($act, 'link:') === 0) {
+            $linkUrl = substr($act, 5); // enlever "link:"
+            $linkLabel = getLinkLabel($linkUrl);
+            if ($resp) chatbotSaveMessage($cid, 'bot', $resp);
+            respond([
+                'step' => $stepId,
+                'message' => $resp ?: '',
+                'options' => [
+                    ['label' => "📄 $linkLabel", 'value' => 'voir_page', 'action' => 'link', 'url' => $linkUrl],
+                    ['label' => '❓ Autre question', 'value' => 'autre', 'next' => 40],
+                    ['label' => '📋 Être rappelé', 'value' => 'coord', 'next' => 50]
+                ]
+            ]);
         }
 
         // Sinon, répondre avec le texte + proposer la suite
@@ -498,6 +514,22 @@ function getFollowUpOptions($intentionKey) {
         ['label' => '❓ Autre question', 'value' => 'autre', 'next' => 40],
         ['label' => '📋 Être rappelé', 'value' => 'coord', 'next' => 50]
     ];
+}
+
+function getLinkLabel($url) {
+    $labels = [
+        '/modeles.php' => 'Voir nos modèles',
+        '/engagements.php' => 'Voir nos engagements',
+        '/constructeur.php' => 'Découvrir ORCA',
+        '/contact.php' => 'Nous contacter',
+        '/faq.php' => 'Consulter la FAQ',
+        '/blog.php' => 'Lire nos actualités',
+        '/estimation.php' => 'Estimer mon projet',
+    ];
+    foreach ($labels as $path => $label) {
+        if (strpos($url, $path) !== false) return $label;
+    }
+    return 'En savoir plus';
 }
 
 function respond($data) {
