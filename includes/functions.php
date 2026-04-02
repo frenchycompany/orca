@@ -3,6 +3,66 @@
  * Fonctions utilitaires du site ORCA
  */
 
+// ======================================================
+// TEXTES ÉDITABLES
+// Usage: t('page.cle', 'Texte par défaut')
+// ======================================================
+
+$_site_texts_cache = null;
+
+/**
+ * Récupère un texte éditable. Si pas en BDD, retourne le défaut.
+ * En mode admin (GET ?edit_texts=1), entoure le texte d'un cadre cliquable.
+ */
+function t($key, $default = '') {
+    global $pdo, $_site_texts_cache;
+
+    // Charger le cache une seule fois
+    if ($_site_texts_cache === null) {
+        $_site_texts_cache = [];
+        try {
+            $stmt = $pdo->query("SELECT CONCAT(page, '.', text_key) as full_key, text_value FROM site_texts");
+            while ($row = $stmt->fetch()) {
+                $_site_texts_cache[$row['full_key']] = $row['text_value'];
+            }
+        } catch (Exception $e) {
+            // Table pas encore créée
+        }
+    }
+
+    $value = $_site_texts_cache[$key] ?? $default;
+
+    // Auto-insertion si le texte n'existe pas encore en BDD
+    if (!isset($_site_texts_cache[$key]) && $default !== '') {
+        try {
+            $parts = explode('.', $key, 2);
+            if (count($parts) === 2) {
+                $type = (strlen($default) > 100 || strpos($default, "\n") !== false) ? 'textarea' : 'text';
+                if (strpos($default, '<') !== false) $type = 'html';
+                $pdo->prepare("INSERT IGNORE INTO site_texts (page, text_key, text_value, text_type) VALUES (?, ?, ?, ?)")
+                    ->execute([$parts[0], $parts[1], $default, $type]);
+                $_site_texts_cache[$key] = $default;
+            }
+        } catch (Exception $e) {}
+    }
+
+    return $value;
+}
+
+/**
+ * Version HTML-safe de t()
+ */
+function te($key, $default = '') {
+    return htmlspecialchars(t($key, $default));
+}
+
+/**
+ * Version avec nl2br pour les textes multilignes
+ */
+function tnl($key, $default = '') {
+    return nl2br(htmlspecialchars(t($key, $default)));
+}
+
 /**
  * Affiche un message flash
  */

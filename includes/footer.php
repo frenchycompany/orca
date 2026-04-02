@@ -164,13 +164,9 @@
     }
     </script>
 
-    <!-- Chatbot -->
-    <?php
-    // Ne pas charger le widget chatbot flottant sur la landing page estimation
-    if (basename($_SERVER['PHP_SELF']) !== 'estimation.php'):
-    ?>
-    <script>window.chatbotBaseUrl = '';</script>
-    <script src="js/chatbot.js"></script>
+    <!-- FrenchyBot -->
+    <?php if (basename($_SERVER['PHP_SELF']) !== 'estimation.php'): ?>
+    <script src="https://bot.frenchycompany.fr/api/v1/embed.js.php?token=83059f1ffd4adf64a5ef5e9a803dd1d2"></script>
     <?php endif; ?>
 </body>
 </html>
