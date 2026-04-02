@@ -4,16 +4,16 @@
  */
 require_once __DIR__ . '/includes/config.php';
 
-$page_title = 'Estimez votre maison en 2 minutes - Maisons ORCA';
-$page_description = 'Obtenez une estimation gratuite et personnalisée pour votre projet de construction. Réponse sous 24h.';
+$page_title = t('estimation.meta_title', 'Estimez votre maison en 2 minutes - Maisons ORCA');
+$page_description = t('estimation.meta_description', 'Obtenez une estimation gratuite et personnalisée pour votre projet de construction. Réponse sous 24h.');
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $page_title; ?></title>
-    <meta name="description" content="<?php echo $page_description; ?>">
+    <title><?php echo htmlspecialchars($page_title); ?></title>
+    <meta name="description" content="<?php echo htmlspecialchars($page_description); ?>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -37,16 +37,16 @@ $page_description = 'Obtenez une estimation gratuite et personnalisée pour votr
 </head>
 <body>
     <header class="lp-header">
-        <div class="lp-logo">Maisons <span>ORCA</span></div>
+        <div class="lp-logo"><?php echo te('estimation.logo', 'Maisons'); ?> <span>ORCA</span></div>
         <a href="tel:<?php echo str_replace(' ', '', $site_config['site_phone'] ?? '0344000000'); ?>" class="lp-phone">
-            📞 <?php echo $site_config['site_phone'] ?? '03 44 00 00 00'; ?>
+            📞 <?php echo htmlspecialchars($site_config['site_phone'] ?? '03 44 00 00 00'); ?>
         </a>
     </header>
 
     <main class="lp-main">
         <div class="lp-title">
-            <h1>🏠 Estimez votre maison en 2 minutes</h1>
-            <p>Gratuit, sans engagement, réponse sous 24h</p>
+            <h1><?php echo te('estimation.title', '🏠 Estimez votre maison en 2 minutes'); ?></h1>
+            <p><?php echo te('estimation.subtitle', 'Gratuit, sans engagement, réponse sous 24h'); ?></p>
         </div>
 
         <div class="lp-iframe-wrap">
@@ -56,16 +56,16 @@ $page_description = 'Obtenez une estimation gratuite et personnalisée pour votr
         </div>
 
         <div class="lp-trust">
-            <div class="lp-trust-item">✅ Gratuit</div>
-            <div class="lp-trust-item">🔒 Sans engagement</div>
-            <div class="lp-trust-item">📞 Rappel sous 24h</div>
-            <div class="lp-trust-item">🏠 Depuis 1993</div>
+            <div class="lp-trust-item"><?php echo te('estimation.trust1', '✅ Gratuit'); ?></div>
+            <div class="lp-trust-item"><?php echo te('estimation.trust2', '🔒 Sans engagement'); ?></div>
+            <div class="lp-trust-item"><?php echo te('estimation.trust3', '📞 Rappel sous 24h'); ?></div>
+            <div class="lp-trust-item"><?php echo te('estimation.trust4', '🏠 Depuis 1993'); ?></div>
         </div>
         <div class="lp-stats">
-            <div class="lp-stat"><div class="lp-stat-num">30+</div><div class="lp-stat-label">ans d'expérience</div></div>
-            <div class="lp-stat"><div class="lp-stat-num">3000+</div><div class="lp-stat-label">maisons construites</div></div>
-            <div class="lp-stat"><div class="lp-stat-num">6</div><div class="lp-stat-label">modèles</div></div>
-            <div class="lp-stat"><div class="lp-stat-num">145k€</div><div class="lp-stat-label">à partir de</div></div>
+            <div class="lp-stat"><div class="lp-stat-num"><?php echo te('estimation.stat1_num', '30+'); ?></div><div class="lp-stat-label"><?php echo te('estimation.stat1_label', 'ans d\'expérience'); ?></div></div>
+            <div class="lp-stat"><div class="lp-stat-num"><?php echo te('estimation.stat2_num', '3000+'); ?></div><div class="lp-stat-label"><?php echo te('estimation.stat2_label', 'maisons construites'); ?></div></div>
+            <div class="lp-stat"><div class="lp-stat-num"><?php echo te('estimation.stat3_num', '6'); ?></div><div class="lp-stat-label"><?php echo te('estimation.stat3_label', 'modèles'); ?></div></div>
+            <div class="lp-stat"><div class="lp-stat-num"><?php echo te('estimation.stat4_num', '145k€'); ?></div><div class="lp-stat-label"><?php echo te('estimation.stat4_label', 'à partir de'); ?></div></div>
         </div>
     </main>
 </body>
