@@ -50,6 +50,24 @@ $hero_opacity = $site_config['banner_overlay_opacity'] ?? '0.85';
     </div>
 </section>
 
+<!-- Section: Chatbot estimation -->
+<section class="section" style="background: linear-gradient(135deg, #f0faf9 0%, #e8f5f3 100%);">
+    <div class="container" style="max-width: 600px;">
+        <div class="section-header">
+            <p class="section-subtitle"><?php echo te('home.chatbot_subtitle', 'Estimation gratuite'); ?></p>
+            <h2 class="section-title"><?php echo te('home.chatbot_title', 'Estimez votre projet en 2 minutes'); ?></h2>
+            <p class="section-text"><?php echo te('home.chatbot_text', 'Notre assistant vous aide à trouver la maison et le terrain idéal. Réponse personnalisée sous 24h.'); ?></p>
+        </div>
+        <div style="border-radius: 16px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.1);">
+            <iframe src="https://bot.frenchycompany.fr/api/v1/iframe.php?token=83059f1ffd4adf64a5ef5e9a803dd1d2"
+                    style="width:100%;height:520px;border:none;display:block;"
+                    title="Assistant ORCA"
+                    loading="lazy"
+                    allow="clipboard-write"></iframe>
+        </div>
+    </div>
+</section>
+
 <!-- Pourquoi ORCA -->
 <section class="section">
     <div class="container">
