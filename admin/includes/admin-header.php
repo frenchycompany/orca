@@ -282,7 +282,88 @@ $current_page = basename($_SERVER['PHP_SELF'], '.php');
         .btn-danger:hover {
             background: #d9363e;
         }
-        
+
+        /* ======== FORMULAIRES GLOBAL ADMIN ======== */
+        .form-group {
+            margin-bottom: 14px;
+        }
+        .form-label {
+            display: block;
+            font-weight: 600;
+            font-size: 12px;
+            color: #555;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .form-label small, .form-label .required {
+            font-weight: 400;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+        .required { color: #e74c3c; }
+        .form-control,
+        .admin-content input[type="text"],
+        .admin-content input[type="email"],
+        .admin-content input[type="tel"],
+        .admin-content input[type="url"],
+        .admin-content input[type="number"],
+        .admin-content input[type="password"],
+        .admin-content input[type="date"],
+        .admin-content input[type="color"],
+        .admin-content select,
+        .admin-content textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #fff;
+            color: #222;
+            line-height: 1.5;
+            transition: border-color .15s, box-shadow .15s;
+            box-sizing: border-box;
+        }
+        .admin-content textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        .form-control:focus,
+        .admin-content input:focus,
+        .admin-content select:focus,
+        .admin-content textarea:focus {
+            outline: none;
+            border-color: var(--color-primary, #C41E3A);
+            box-shadow: 0 0 0 3px rgba(196, 30, 58, 0.08);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .form-check {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+        .form-check input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--color-primary, #C41E3A);
+        }
+        .admin-content input[type="file"] {
+            padding: 8px;
+            font-size: 13px;
+        }
+        .admin-content input[type="color"] {
+            padding: 4px;
+            height: 42px;
+            cursor: pointer;
+        }
+
         .btn-icon {
             padding: 8px;
             border-radius: 6px;
