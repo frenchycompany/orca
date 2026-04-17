@@ -148,37 +148,36 @@ include 'includes/header.php';
             <p class="section-text"><?php echo te('modele.inclus_text', 'Tout ce dont vous avez besoin pour emménager sereinement'); ?></p>
         </div>
         
+        <?php
+        // Inclusions par modèle (depuis la BDD) ou fallback par défaut
+        $default_structure = "Fondations superficielles\nMurs en briques ou parpaings\nCharpente traditionnelle\nCouverture tuiles ou ardoises\nMenuiseries PVC ou ALU";
+        $default_interieur = "Cloisons et plafonds\nCarrelage séjour/cuisine\nParquet ou moquette chambres\nCuisine équipée (meubles + électro)\nSalle de bain complète";
+        $default_equip = "Chauffage gaz + eau chaude\nVolets roulants électriques\nPorte de garage sectionnelle\nPortail + interphone\nJardinet clôturé";
+
+        $inclus = [
+            ['title' => te('modele.structure_title', 'Structure'), 'items' => $modele['inclus_structure'] ?? $default_structure],
+            ['title' => te('modele.interieur_title', 'Intérieur'), 'items' => $modele['inclus_interieur'] ?? $default_interieur],
+            ['title' => te('modele.equip_title', 'Équipements'), 'items' => $modele['inclus_equipements'] ?? $default_equip],
+        ];
+        ?>
         <div class="grid grid-3">
+            <?php foreach ($inclus as $cat): ?>
             <div style="background: var(--color-white); padding: var(--space-6); border-radius: var(--radius-lg);">
-                <h3 style="margin-bottom: var(--space-4);"><?php echo te('modele.structure_title', 'Structure'); ?></h3>
+                <h3 style="margin-bottom: var(--space-4);"><?php echo $cat['title']; ?></h3>
                 <ul style="list-style: none; font-size: var(--text-sm);">
-                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ <?php echo te('modele.structure1', 'Fondations superficielles'); ?></li>
-                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ <?php echo te('modele.structure2', 'Murs en briques ou parpaings'); ?></li>
-                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ <?php echo te('modele.structure3', 'Charpente traditionnelle'); ?></li>
-                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ <?php echo te('modele.structure4', 'Couverture tuiles ou ardoises'); ?></li>
-                    <li style="padding: var(--space-2) 0;">✓ <?php echo te('modele.structure5', 'Menuiseries PVC ou ALU'); ?></li>
+                    <?php
+                    $items = explode("\n", str_replace("\\n", "\n", $cat['items']));
+                    $total = count($items);
+                    foreach ($items as $i => $item):
+                        $item = trim($item);
+                        if ($item === '') continue;
+                        $isLast = ($i === $total - 1);
+                    ?>
+                    <li style="padding: var(--space-2) 0;<?php echo $isLast ? '' : ' border-bottom: 1px solid var(--color-gray-light);'; ?>">✓ <?php echo htmlspecialchars($item); ?></li>
+                    <?php endforeach; ?>
                 </ul>
             </div>
-            <div style="background: var(--color-white); padding: var(--space-6); border-radius: var(--radius-lg);">
-                <h3 style="margin-bottom: var(--space-4);"><?php echo te('modele.interieur_title', 'Intérieur'); ?></h3>
-                <ul style="list-style: none; font-size: var(--text-sm);">
-                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ <?php echo te('modele.interieur1', 'Cloisons et plafonds'); ?></li>
-                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ <?php echo te('modele.interieur2', 'Carrelage séjour/cuisine'); ?></li>
-                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ <?php echo te('modele.interieur3', 'Parquet ou moquette chambres'); ?></li>
-                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ <?php echo te('modele.interieur4', 'Cuisine équipée (meubles + électro)'); ?></li>
-                    <li style="padding: var(--space-2) 0;">✓ <?php echo te('modele.interieur5', 'Salle de bain complète'); ?></li>
-                </ul>
-            </div>
-            <div style="background: var(--color-white); padding: var(--space-6); border-radius: var(--radius-lg);">
-                <h3 style="margin-bottom: var(--space-4);"><?php echo te('modele.equip_title', 'Équipements'); ?></h3>
-                <ul style="list-style: none; font-size: var(--text-sm);">
-                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ <?php echo te('modele.equip1', 'Chauffage gaz + eau chaude'); ?></li>
-                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ <?php echo te('modele.equip2', 'Volets roulants électriques'); ?></li>
-                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ <?php echo te('modele.equip3', 'Porte de garage sectionnelle'); ?></li>
-                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ <?php echo te('modele.equip4', 'Portail + interphone'); ?></li>
-                    <li style="padding: var(--space-2) 0;">✓ <?php echo te('modele.equip5', 'Jardinet clôturé'); ?></li>
-                </ul>
-            </div>
+            <?php endforeach; ?>
         </div>
     </div>
 </section>

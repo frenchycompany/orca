@@ -42,7 +42,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'is_active' => isset($_POST['is_active']) ? 1 : 0,
         'ordre_affichage' => intval($_POST['ordre_affichage'] ?? 0),
         'meta_title' => $_POST['meta_title'] ?? '',
-        'meta_description' => $_POST['meta_description'] ?? ''
+        'meta_description' => $_POST['meta_description'] ?? '',
+        'inclus_structure' => $_POST['inclus_structure'] ?? '',
+        'inclus_interieur' => $_POST['inclus_interieur'] ?? '',
+        'inclus_equipements' => $_POST['inclus_equipements'] ?? ''
     ];
     
     // Gestion de l'image
@@ -57,14 +60,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if ($id) {
         // Update
-        $sql = "UPDATE modeles SET nom=?, slug=?, slogan=?, description=?, points_forts=?, 
-                surface_habitable=?, nb_chambres=?, nb_salles_bain=?, nb_etages=?, style=?, 
-                prix_afficher=?, is_active=?, ordre_affichage=?, meta_title=?, meta_description=?";
+        $sql = "UPDATE modeles SET nom=?, slug=?, slogan=?, description=?, points_forts=?,
+                surface_habitable=?, nb_chambres=?, nb_salles_bain=?, nb_etages=?, style=?,
+                prix_afficher=?, is_active=?, ordre_affichage=?, meta_title=?, meta_description=?,
+                inclus_structure=?, inclus_interieur=?, inclus_equipements=?";
         $params = [
             $data['nom'], $data['slug'], $data['slogan'], $data['description'], $data['points_forts'],
-            $data['surface_habitable'], $data['nb_chambres'], $data['nb_salles_bain'], 
+            $data['surface_habitable'], $data['nb_chambres'], $data['nb_salles_bain'],
             $data['nb_etages'], $data['style'], $data['prix_afficher'], $data['is_active'],
-            $data['ordre_affichage'], $data['meta_title'], $data['meta_description']
+            $data['ordre_affichage'], $data['meta_title'], $data['meta_description'],
+            $data['inclus_structure'], $data['inclus_interieur'], $data['inclus_equipements']
         ];
         
         if (isset($data['image_principale'])) {
@@ -78,17 +83,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute($params);
     } else {
         // Insert
-        $sql = "INSERT INTO modeles (nom, slug, slogan, description, points_forts, surface_habitable, 
+        $sql = "INSERT INTO modeles (nom, slug, slogan, description, points_forts, surface_habitable,
                 nb_chambres, nb_salles_bain, nb_etages, style, prix_afficher, is_active, ordre_affichage,
-                meta_title, meta_description, image_principale) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                meta_title, meta_description, image_principale, inclus_structure, inclus_interieur, inclus_equipements)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
             $data['nom'], $data['slug'], $data['slogan'], $data['description'], $data['points_forts'],
-            $data['surface_habitable'], $data['nb_chambres'], $data['nb_salles_bain'], 
+            $data['surface_habitable'], $data['nb_chambres'], $data['nb_salles_bain'],
             $data['nb_etages'], $data['style'], $data['prix_afficher'], $data['is_active'],
             $data['ordre_affichage'], $data['meta_title'], $data['meta_description'],
-            $data['image_principale'] ?? null
+            $data['image_principale'] ?? null,
+            $data['inclus_structure'], $data['inclus_interieur'], $data['inclus_equipements']
         ]);
         $id = $pdo->lastInsertId();
     }
@@ -244,6 +250,26 @@ include 'includes/admin-header.php';
                 <textarea name="meta_description" class="form-control" rows="2"><?php echo $modele['meta_description'] ?? ''; ?></textarea>
             </div>
             
+            <!-- Inclusions par modèle -->
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #eee;">
+                <h3 style="margin-bottom: 15px;">🏠 Ce qui est inclus dans le prix</h3>
+                <p style="font-size: 13px; color: #888; margin-bottom: 15px;">Un élément par ligne. Ces textes apparaissent sur la fiche modèle dans les 3 colonnes Structure / Intérieur / Équipements.</p>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                    <div class="form-group">
+                        <label class="form-label">Structure</label>
+                        <textarea name="inclus_structure" class="form-control" rows="6" placeholder="Fondations superficielles&#10;Murs en briques&#10;Charpente traditionnelle"><?php echo htmlspecialchars($modele['inclus_structure'] ?? "Fondations superficielles\nMurs en briques ou parpaings\nCharpente traditionnelle\nCouverture tuiles ou ardoises\nMenuiseries PVC ou ALU"); ?></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Intérieur</label>
+                        <textarea name="inclus_interieur" class="form-control" rows="6" placeholder="Cloisons et plafonds&#10;Carrelage séjour&#10;Parquet chambres"><?php echo htmlspecialchars($modele['inclus_interieur'] ?? "Cloisons et plafonds\nCarrelage séjour/cuisine\nParquet ou moquette chambres\nCuisine équipée (meubles + électro)\nSalle de bain complète"); ?></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Équipements</label>
+                        <textarea name="inclus_equipements" class="form-control" rows="6" placeholder="Chauffage gaz&#10;Volets roulants&#10;Porte de garage"><?php echo htmlspecialchars($modele['inclus_equipements'] ?? "Chauffage gaz + eau chaude\nVolets roulants électriques\nPorte de garage sectionnelle\nPortail + interphone\nJardinet clôturé"); ?></textarea>
+                    </div>
+                </div>
+            </div>
+
             <div class="form-check" style="margin: 20px 0;">
                 <input type="checkbox" id="is_active" name="is_active" <?php echo ($modele['is_active'] ?? 1) ? 'checked' : ''; ?>>
                 <label for="is_active">Modèle actif (visible sur le site)</label>
