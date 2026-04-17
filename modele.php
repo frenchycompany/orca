@@ -75,10 +75,10 @@ include 'includes/header.php';
             <!-- Informations -->
             <div>
                 <div class="modele-info">
-                    <h2 style="margin-bottom: var(--space-4);">Description</h2>
+                    <h2 style="margin-bottom: var(--space-4);"><?php echo te('modele.description_title', 'Description'); ?></h2>
                     <p><?php echo nl2br(clean($modele['description'])); ?></p>
-                    
-                    <h3 style="margin-top: var(--space-8); margin-bottom: var(--space-4);">Points forts</h3>
+
+                    <h3 style="margin-top: var(--space-8); margin-bottom: var(--space-4);"><?php echo te('modele.points_forts_title', 'Points forts'); ?></h3>
                     <ul style="list-style: none;">
                         <?php foreach (explode('\n', $modele['points_forts']) as $point): ?>
                         <li style="display: flex; gap: var(--space-3); margin-bottom: var(--space-3);">
@@ -93,15 +93,15 @@ include 'includes/header.php';
                 <div class="modele-specs" style="margin-top: var(--space-6);">
                     <div class="modele-spec">
                         <div class="modele-spec-value"><?php echo formatSurface($modele['surface_habitable']); ?></div>
-                        <div class="modele-spec-label">Surface habitable</div>
+                        <div class="modele-spec-label"><?php echo te('modele.spec_surface', 'Surface habitable'); ?></div>
                     </div>
                     <div class="modele-spec">
                         <div class="modele-spec-value"><?php echo $modele['nb_chambres']; ?></div>
-                        <div class="modele-spec-label">Chambres</div>
+                        <div class="modele-spec-label"><?php echo te('modele.spec_chambres', 'Chambres'); ?></div>
                     </div>
                     <div class="modele-spec">
                         <div class="modele-spec-value"><?php echo $modele['nb_salles_bain']; ?></div>
-                        <div class="modele-spec-label">Salles de bain</div>
+                        <div class="modele-spec-label"><?php echo te('modele.spec_sdb', 'Salles de bain'); ?></div>
                     </div>
                 </div>
                 
@@ -113,15 +113,15 @@ include 'includes/header.php';
                     // Sinon on ajoute le label
                     if (stripos($prix, 'partir') === false): 
                     ?>
-                    <div class="modele-price-label">À partir de</div>
+                    <div class="modele-price-label"><?php echo te('modele.price_label', 'À partir de'); ?></div>
                     <?php endif; ?>
                     <div class="modele-price"><?php echo clean($prix); ?></div>
                 </div>
                 
                 <!-- CTA -->
                 <div style="margin-top: var(--space-6); display: flex; gap: var(--space-4); flex-wrap: wrap;">
-                    <a href="<?php echo url('contact.php?modele=' . $modele['slug']); ?>" class="btn btn-primary btn-lg" style="flex: 1; min-width: 200px;">Demander un devis</a>
-                    <a href="tel:0344000000" class="btn btn-outline btn-lg" style="flex: 1; min-width: 200px;">Nous appeler</a>
+                    <a href="<?php echo url('contact.php?modele=' . $modele['slug']); ?>" class="btn btn-primary btn-lg" style="flex: 1; min-width: 200px;"><?php echo te('modele.btn_devis', 'Demander un devis'); ?></a>
+                    <a href="tel:<?php echo str_replace(' ', '', $site_config['site_phone'] ?? '0344000000'); ?>" class="btn btn-outline btn-lg" style="flex: 1; min-width: 200px;"><?php echo te('modele.btn_appeler', 'Nous appeler'); ?></a>
                 </div>
                 
                 <!-- Plan PDF -->
@@ -131,7 +131,7 @@ include 'includes/header.php';
                         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: inline-block; vertical-align: middle; margin-right: var(--space-2);">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                         </svg>
-                        Télécharger le plan
+                        <?php echo te('modele.btn_plan', 'Télécharger le plan'); ?>
                     </a>
                 </div>
                 <?php endif; ?>
@@ -144,39 +144,39 @@ include 'includes/header.php';
 <section class="section section-alt">
     <div class="container">
         <div class="section-header">
-            <h2 class="section-title">Ce qui est inclus dans le prix</h2>
-            <p class="section-text">Tout ce dont vous avez besoin pour emménager sereinement</p>
+            <h2 class="section-title"><?php echo te('modele.inclus_title', 'Ce qui est inclus dans le prix'); ?></h2>
+            <p class="section-text"><?php echo te('modele.inclus_text', 'Tout ce dont vous avez besoin pour emménager sereinement'); ?></p>
         </div>
         
         <div class="grid grid-3">
             <div style="background: var(--color-white); padding: var(--space-6); border-radius: var(--radius-lg);">
-                <h3 style="margin-bottom: var(--space-4);">Structure</h3>
+                <h3 style="margin-bottom: var(--space-4);"><?php echo te('modele.structure_title', 'Structure'); ?></h3>
                 <ul style="list-style: none; font-size: var(--text-sm);">
-                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ Fondations superficielles</li>
-                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ Murs en briques ou parpaings</li>
-                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ Charpente traditionnelle</li>
-                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ Couverture tuiles ou ardoises</li>
-                    <li style="padding: var(--space-2) 0;">✓ Menuiseries PVC ou ALU</li>
+                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ <?php echo te('modele.structure1', 'Fondations superficielles'); ?></li>
+                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ <?php echo te('modele.structure2', 'Murs en briques ou parpaings'); ?></li>
+                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ <?php echo te('modele.structure3', 'Charpente traditionnelle'); ?></li>
+                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ <?php echo te('modele.structure4', 'Couverture tuiles ou ardoises'); ?></li>
+                    <li style="padding: var(--space-2) 0;">✓ <?php echo te('modele.structure5', 'Menuiseries PVC ou ALU'); ?></li>
                 </ul>
             </div>
             <div style="background: var(--color-white); padding: var(--space-6); border-radius: var(--radius-lg);">
-                <h3 style="margin-bottom: var(--space-4);">Intérieur</h3>
+                <h3 style="margin-bottom: var(--space-4);"><?php echo te('modele.interieur_title', 'Intérieur'); ?></h3>
                 <ul style="list-style: none; font-size: var(--text-sm);">
-                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ Cloisons et plafonds</li>
-                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ Carrelage séjour/cuisine</li>
-                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ Parquet ou moquette chambres</li>
-                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ Cuisine équipée (meubles + électro)</li>
-                    <li style="padding: var(--space-2) 0;">✓ Salle de bain complète</li>
+                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ <?php echo te('modele.interieur1', 'Cloisons et plafonds'); ?></li>
+                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ <?php echo te('modele.interieur2', 'Carrelage séjour/cuisine'); ?></li>
+                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ <?php echo te('modele.interieur3', 'Parquet ou moquette chambres'); ?></li>
+                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ <?php echo te('modele.interieur4', 'Cuisine équipée (meubles + électro)'); ?></li>
+                    <li style="padding: var(--space-2) 0;">✓ <?php echo te('modele.interieur5', 'Salle de bain complète'); ?></li>
                 </ul>
             </div>
             <div style="background: var(--color-white); padding: var(--space-6); border-radius: var(--radius-lg);">
-                <h3 style="margin-bottom: var(--space-4);">Équipements</h3>
+                <h3 style="margin-bottom: var(--space-4);"><?php echo te('modele.equip_title', 'Équipements'); ?></h3>
                 <ul style="list-style: none; font-size: var(--text-sm);">
-                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ Chauffage gaz + eau chaude</li>
-                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ Volets roulants électriques</li>
-                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ Porte de garage sectionnelle</li>
-                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ Portail + interphone</li>
-                    <li style="padding: var(--space-2) 0;">✓ Jardinet clôturé</li>
+                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ <?php echo te('modele.equip1', 'Chauffage gaz + eau chaude'); ?></li>
+                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ <?php echo te('modele.equip2', 'Volets roulants électriques'); ?></li>
+                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ <?php echo te('modele.equip3', 'Porte de garage sectionnelle'); ?></li>
+                    <li style="padding: var(--space-2) 0; border-bottom: 1px solid var(--color-gray-light);">✓ <?php echo te('modele.equip4', 'Portail + interphone'); ?></li>
+                    <li style="padding: var(--space-2) 0;">✓ <?php echo te('modele.equip5', 'Jardinet clôturé'); ?></li>
                 </ul>
             </div>
         </div>
@@ -188,7 +188,7 @@ include 'includes/header.php';
 <section class="section">
     <div class="container">
         <div class="section-header">
-            <h2 class="section-title">Vous pourriez aussi aimer</h2>
+            <h2 class="section-title"><?php echo te('modele.similaires_title', 'Vous pourriez aussi aimer'); ?></h2>
         </div>
         
         <div class="modeles-grid" style="grid-template-columns: repeat(2, 1fr);">
@@ -216,129 +216,24 @@ include 'includes/header.php';
 </section>
 <?php endif; ?>
 
-<!-- Section: Chatbot contextualisé -->
+<!-- Section: Chatbot FrenchyBot -->
 <section class="section section-alt" id="devis">
     <div class="container container-narrow">
         <div class="section-header">
-            <p class="section-subtitle">Devis gratuit</p>
-            <h2 class="section-title">Intéressé par <?php echo htmlspecialchars($modele['nom']); ?> ?</h2>
-            <p class="section-text">Discutez avec notre assistant pour obtenir une estimation personnalisée</p>
+            <p class="section-subtitle"><?php echo te('modele.devis_subtitle', 'Devis gratuit'); ?></p>
+            <h2 class="section-title"><?php echo te('modele.devis_title_prefix', 'Intéressé par'); ?> <?php echo htmlspecialchars($modele['nom']); ?> ?</h2>
+            <p class="section-text"><?php echo te('modele.devis_text', 'Discutez avec notre assistant pour obtenir une estimation personnalisée'); ?></p>
         </div>
 
-        <?php
-        $m_nom = htmlspecialchars($modele['nom']);
-        $m_surface = $modele['surface_habitable'];
-        $m_chambres = $modele['nb_chambres'];
-        $m_prix = $modele['prix_afficher'] ?: '';
-        $m_etage = $modele['nb_etages'] === 'plain-pied' ? 'plain-pied' : 'avec étage';
-        ?>
-
-        <div id="mc-chatbot" style="background:#fff;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,0.12);overflow:hidden;max-width:520px;margin:0 auto;">
-            <div style="background:linear-gradient(135deg,#1a5653,#0f3d3a);color:#fff;padding:16px 20px;display:flex;align-items:center;gap:12px;">
-                <div style="width:40px;height:40px;background:rgba(255,255,255,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;">💬</div>
-                <div><div style="font-weight:700;font-size:15px;">Devis <?php echo $m_nom; ?></div><div style="font-size:11px;opacity:.7;">Estimation gratuite en 2 min</div></div>
-            </div>
-            <div id="mc-msgs" style="min-height:250px;max-height:380px;overflow-y:auto;padding:16px;background:#f5f7f9;"></div>
-            <div id="mc-inp" style="padding:12px 16px;background:#fff;border-top:1px solid #eee;display:flex;gap:8px;">
-                <input id="mc-input" type="text" placeholder="Votre question..." style="flex:1;padding:10px 14px;border:1px solid #ddd;border-radius:24px;font-size:13px;outline:none;" autocomplete="off">
-                <button id="mc-send" style="padding:10px 16px;background:#1a5653;color:#fff;border:none;border-radius:24px;cursor:pointer;font-size:13px;font-weight:700;">Envoyer</button>
-            </div>
+        <div style="border-radius:16px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,0.12);max-width:520px;margin:0 auto;">
+            <iframe src="https://bot.frenchycompany.fr/api/v1/iframe.php?token=83059f1ffd4adf64a5ef5e9a803dd1d2"
+                    style="width:100%;height:500px;border:none;display:block;"
+                    title="Devis <?php echo htmlspecialchars($modele['nom']); ?>"
+                    loading="lazy"
+                    allow="clipboard-write"></iframe>
         </div>
     </div>
 </section>
-
-<script>
-// Chatbot inline contextualisé pour le modèle
-(function() {
-    var mcId = null, mcStep = 1;
-    var apiUrl = '<?php echo url("chatbot/api.php"); ?>';
-    var modelName = <?php echo json_encode($m_nom); ?>;
-    var modelSurface = <?php echo json_encode($m_surface); ?>;
-    var modelChambres = <?php echo json_encode($m_chambres); ?>;
-    var modelPrix = <?php echo json_encode($m_prix); ?>;
-    var modelEtage = <?php echo json_encode($m_etage); ?>;
-
-    function q(id) { return document.getElementById(id); }
-
-    // Init avec message contextuel
-    showTyping();
-    post('action=init', function(d) {
-        hideTyping();
-        if (d.error) { addMsg(d.error, 'bot'); return; }
-        mcId = d.conversation_id;
-        mcStep = d.step || 1;
-
-        // Message contextuel basé sur le modèle
-        var welcome = "Vous regardez **" + modelName + "** ! Excellent choix 👍\n\n" +
-            "📐 " + modelSurface + "m², " + modelChambres + " chambres, " + modelEtage + "\n" +
-            "💰 " + modelPrix + "\n\n" +
-            "Comment puis-je vous aider ?";
-        addMsg(welcome, 'bot');
-        showChips([
-            {label: '💰 Obtenir un devis pour ce modèle', value: 'go_form', next: 50},
-            {label: '🌿 Trouver un terrain adapté', value: 'go_terrain', next: 20},
-            {label: '❓ J\'ai une question', value: 'go_question', next: 40}
-        ]);
-    });
-
-    q('mc-send').onclick = function() { var t=q('mc-input').value.trim(); if(t){q('mc-input').value='';send(t);} };
-    q('mc-input').onkeypress = function(e) { if(e.key==='Enter'){var t=q('mc-input').value.trim();if(t){q('mc-input').value='';send(t);}} };
-    function send(val, label) {
-        addMsg(label||val, 'user'); clearChips(); showTyping();
-        post('action=message&conversation_id='+mcId+'&message='+encodeURIComponent(val), function(d) {
-            hideTyping();
-            if(d.error){addMsg(d.error,'bot');return;}
-            mcStep=d.step||mcStep;
-            if(d.message)addMsg(d.message,'bot');
-            if(d.type==='final'){hideInput();if(d.options)showChips(d.options);}
-            else if(d.type==='results_then_form'){showChips([{label:'👍 Ça m\'intéresse',value:'coord',next:50},{label:'🔄 Autres critères',value:'autre',next:40},{label:'❓ Question',value:'go_question',next:40}]);}
-            else if(d.options)showChips(d.options);
-            if(d.field){var ph={prenom:'Votre prénom...',nom:'Votre nom...',email:'Votre email...',telephone:'06 12 34 56 78...'};q('mc-input').placeholder=ph[d.field]||'Votre message...';q('mc-input').focus();}
-        });
-    }
-
-    function addMsg(text,type){
-        if(!text)return;var c=q('mc-msgs'),d=document.createElement('div');
-        d.style.cssText='margin:8px 0;padding:12px 16px;border-radius:16px;max-width:88%;font-size:13px;line-height:1.6;word-wrap:break-word;animation:mcfade .3s ease;'+(type==='bot'?'background:#fff;color:#333;margin-right:auto;border:1px solid #e8e8e8;border-bottom-left-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,0.05);':'background:#1a5653;color:#fff;margin-left:auto;border-bottom-right-radius:4px;max-width:75%;');
-        var s=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        d.innerHTML=s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
-        c.appendChild(d);c.scrollTop=c.scrollHeight;
-    }
-    function showChips(opts){
-        if(!opts||!opts.length)return;var c=q('mc-msgs'),w=document.createElement('div');w.className='mc-chips';
-        w.style.cssText='margin:8px 0;display:flex;flex-wrap:wrap;gap:6px;animation:mcfade .3s ease;';
-        opts.forEach(function(o){
-            var b=document.createElement('button');b.textContent=o.label;
-            b.style.cssText='padding:8px 14px;background:#fff;border:1.5px solid #1a5653;border-radius:20px;cursor:pointer;font-size:12px;color:#1a5653;font-weight:500;transition:all .15s;white-space:nowrap;';
-            b.onmouseenter=function(){this.style.background='#1a5653';this.style.color='#fff';};
-            b.onmouseleave=function(){this.style.background='#fff';this.style.color='#1a5653';};
-            b.onclick=function(){
-                if(o.action==='close')return;
-                if(o.action==='link'&&o.url){window.location.href=o.url;return;}
-                send(o.value,o.label);
-            };
-            w.appendChild(b);
-        });
-        c.appendChild(w);c.scrollTop=c.scrollHeight;
-    }
-    function clearChips(){var a=document.querySelectorAll('.mc-chips');for(var i=0;i<a.length;i++)a[i].style.display='none';}
-    function hideInput(){q('mc-inp').style.display='none';}
-    function showTyping(){
-        if(q('mc-typ'))return;var c=q('mc-msgs'),d=document.createElement('div');d.id='mc-typ';
-        d.style.cssText='margin:8px 0;padding:12px 16px;background:#fff;border-radius:16px;border-bottom-left-radius:4px;display:inline-flex;gap:5px;border:1px solid #e8e8e8;';
-        d.innerHTML='<span class="cb-dot"></span><span class="cb-dot"></span><span class="cb-dot"></span>';
-        c.appendChild(d);c.scrollTop=c.scrollHeight;
-    }
-    function hideTyping(){var e=q('mc-typ');if(e)e.remove();}
-    function post(body,cb){
-        var x=new XMLHttpRequest();x.open('POST',apiUrl,true);
-        x.setRequestHeader('Content-Type','application/x-www-form-urlencoded');x.timeout=15000;
-        x.onreadystatechange=function(){if(x.readyState===4){if(x.status===200){try{cb(JSON.parse(x.responseText));}catch(e){cb({error:'Erreur serveur'});}}else{cb({error:'Connexion impossible'});}}};
-        x.ontimeout=function(){cb({error:'Délai dépassé'});};x.send(body);
-    }
-})();
-</script>
-<style>@keyframes mcfade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}</style>
 
 <!-- Ancien formulaire masqué (fallback) -->
 <section class="section" style="display:none;" id="devis-form-fallback">
