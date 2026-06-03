@@ -83,8 +83,8 @@ include 'includes/admin-header.php';
         
         <!-- SECTION : Identité du site -->
         <div class="admin-section">
-            <h2 style="margin-bottom: 20px;">🏢 Identité du site</h2>
-            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <h2>🏢 Identité du site</h2>
+            <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">Nom du site</label>
                     <input type="text" name="site_name" class="form-control" value="<?php echo htmlspecialchars($configs['site_name'] ?? 'Maisons ORCA'); ?>">
@@ -95,14 +95,14 @@ include 'includes/admin-header.php';
                 </div>
             </div>
             
-            <div class="form-row" style="margin-top: 20px;">
+            <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">Description accueil (sous le slogan)</label>
                     <textarea name="site_description" class="form-control" rows="2"><?php echo htmlspecialchars($configs['site_description'] ?? ''); ?></textarea>
                 </div>
             </div>
             
-            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+            <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">Logo actuel</label>
                     <?php if (!empty($configs['logo'])): ?>
@@ -125,7 +125,7 @@ include 'includes/admin-header.php';
                 </div>
             </div>
             
-            <div class="form-group" style="margin-top: 20px;">
+            <div class="form-group">
                 <label class="form-label">Image par défaut (pour les articles sans image)</label>
                 <?php if (!empty($configs['image_default'])): ?>
                 <div style="margin-bottom: 10px;">
@@ -138,8 +138,8 @@ include 'includes/admin-header.php';
         
         <!-- SECTION : Couleurs -->
         <div class="admin-section">
-            <h2 style="margin-bottom: 20px;">🎨 Couleurs du site</h2>
-            <div class="form-row" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+            <h2>🎨 Couleurs du site</h2>
+            <div class="form-row-3">
                 <div class="form-group">
                     <label class="form-label">Couleur principale</label>
                     <div style="display: flex; gap: 10px; align-items: center;">
@@ -169,8 +169,8 @@ include 'includes/admin-header.php';
         
         <!-- SECTION : Contact -->
         <div class="admin-section">
-            <h2 style="margin-bottom: 20px;">📞 Informations de contact</h2>
-            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <h2>📞 Informations de contact</h2>
+            <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">Email</label>
                     <input type="email" name="site_email" class="form-control" value="<?php echo htmlspecialchars($configs['site_email'] ?? 'contact@maisons-orca.fr'); ?>">
@@ -181,12 +181,12 @@ include 'includes/admin-header.php';
                 </div>
             </div>
             
-            <div class="form-group" style="margin-top: 20px;">
+            <div class="form-group">
                 <label class="form-label">Adresse postale</label>
                 <textarea name="site_address" class="form-control" rows="2"><?php echo htmlspecialchars($configs['site_address'] ?? "119 rue Bordier\n60150 Longueil Annel"); ?></textarea>
             </div>
             
-            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+            <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">Fax</label>
                     <input type="text" name="site_fax" class="form-control" value="<?php echo htmlspecialchars($configs['site_fax'] ?? ''); ?>">
@@ -197,7 +197,7 @@ include 'includes/admin-header.php';
                 </div>
             </div>
             
-            <div class="form-group" style="margin-top: 20px;">
+            <div class="form-group">
                 <label class="form-label">Horaires d'ouverture</label>
                 <textarea name="horaires" class="form-control" rows="3"><?php echo htmlspecialchars($configs['horaires'] ?? "Lundi au Vendredi : 9h-12h / 14h-18h\nSamedi : 10h-17h sur rendez-vous"); ?></textarea>
             </div>
@@ -205,13 +205,13 @@ include 'includes/admin-header.php';
         
         <!-- SECTION : SEO -->
         <div class="admin-section">
-            <h2 style="margin-bottom: 20px;">🔍 SEO & Meta</h2>
+            <h2>🔍 SEO & Meta</h2>
             <div class="form-group">
                 <label class="form-label">Meta description par défaut</label>
                 <textarea name="meta_description" class="form-control" rows="2"><?php echo htmlspecialchars($configs['meta_description'] ?? ''); ?></textarea>
                 <small style="color: var(--color-gray);">Description qui apparaît dans Google (160 caractères max)</small>
             </div>
-            <div class="form-group" style="margin-top: 20px;">
+            <div class="form-group">
                 <label class="form-label">Mots-clés (séparés par des virgules)</label>
                 <input type="text" name="meta_keywords" class="form-control" value="<?php echo htmlspecialchars($configs['meta_keywords'] ?? ''); ?>">
             </div>
@@ -219,8 +219,8 @@ include 'includes/admin-header.php';
         
         <!-- SECTION : Réseaux sociaux -->
         <div class="admin-section">
-            <h2 style="margin-bottom: 20px;">📱 Réseaux sociaux</h2>
-            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <h2>📱 Réseaux sociaux</h2>
+            <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">Facebook</label>
                     <input type="url" name="facebook_url" class="form-control" value="<?php echo htmlspecialchars($configs['facebook_url'] ?? ''); ?>" placeholder="https://facebook.com/...">
@@ -230,7 +230,7 @@ include 'includes/admin-header.php';
                     <input type="url" name="instagram_url" class="form-control" value="<?php echo htmlspecialchars($configs['instagram_url'] ?? ''); ?>" placeholder="https://instagram.com/...">
                 </div>
             </div>
-            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+            <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">LinkedIn</label>
                     <input type="url" name="linkedin_url" class="form-control" value="<?php echo htmlspecialchars($configs['linkedin_url'] ?? ''); ?>" placeholder="https://linkedin.com/...">
@@ -244,13 +244,13 @@ include 'includes/admin-header.php';
         
         <!-- SECTION : Intégrations -->
         <div class="admin-section">
-            <h2 style="margin-bottom: 20px;">🔧 Intégrations</h2>
+            <h2>🔧 Intégrations</h2>
             <div class="form-group">
                 <label class="form-label">Google Analytics ID (GA4)</label>
                 <input type="text" name="google_analytics" class="form-control" value="<?php echo htmlspecialchars($configs['google_analytics'] ?? ''); ?>" placeholder="G-XXXXXXXXXX">
                 <small style="color: var(--color-gray);">Format : G-XXXXXXXXXX</small>
             </div>
-            <div class="form-group" style="margin-top: 20px;">
+            <div class="form-group">
                 <label class="form-label">Google Maps API Key</label>
                 <input type="text" name="google_maps_api" class="form-control" value="<?php echo htmlspecialchars($configs['google_maps_api'] ?? ''); ?>">
             </div>
@@ -258,18 +258,18 @@ include 'includes/admin-header.php';
         
         <!-- SECTION : Contenu -->
         <div class="admin-section">
-            <h2 style="margin-bottom: 20px;">📝 Contenu spécifique</h2>
+            <h2>📝 Contenu spécifique</h2>
             <div class="form-group">
                 <label class="form-label">Zone d'intervention (affichée sur la page d'accueil)</label>
                 <textarea name="zone_intervention" class="form-control" rows="3"><?php echo htmlspecialchars($configs['zone_intervention'] ?? "Oise (60), Aisne (02), Somme (80), Seine-et-Marne (77), Val-d'Oise (95), Val-de-Marne (94), Seine-Saint-Denis (93), Essonne (91)"); ?></textarea>
             </div>
-            <div class="form-group" style="margin-top: 20px;">
+            <div class="form-group">
                 <label class="form-label">Texte du footer</label>
                 <textarea name="footer_text" class="form-control" rows="2"><?php echo htmlspecialchars($configs['footer_text'] ?? "Constructeur de maisons individuelles depuis 1993. 6 modèles de qualité à prix maîtrisé."); ?></textarea>
             </div>
         </div>
         
-        <div style="margin-top: 30px; text-align: center;">
+        <div>
             <button type="submit" class="btn btn-primary btn-lg">💾 Enregistrer toute la configuration</button>
         </div>
         
