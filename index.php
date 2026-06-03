@@ -27,7 +27,7 @@ $hero_opacity = $site_config['banner_overlay_opacity'] ?? '0.85';
         <div class="hero-content">
             <p class="hero-subtitle"><?php echo te('home.hero_subtitle', 'Depuis 1993'); ?></p>
             <h1 class="hero-title"><?php echo nl2br(clean($site_config['site_slogan'] ?? t('home.hero_title', "Votre maison neuve à petit prix,\nsans compromis"))); ?></h1>
-            <p class="hero-text"><?php echo te('home.hero_text', '6 modèles standardisés de qualité, livrés clé en main. Prix bloqué, pas de surprise. C\'est l\'engagement ORCA.'); ?></p>
+            <p class="hero-text"><?php echo htmlspecialchars($site_config['site_description'] ?? t('home.hero_text', '6 modèles standardisés de qualité, livrés clé en main. Prix bloqué, pas de surprise. C\'est l\'engagement ORCA.')); ?></p>
             <div class="hero-buttons">
                 <a href="<?php echo url('modeles.php'); ?>" class="btn btn-primary btn-lg"><?php echo te('home.hero_btn_modeles', 'Découvrir nos modèles'); ?></a>
                 <a href="<?php echo url('contact.php'); ?>" class="btn btn-white btn-lg"><?php echo te('home.hero_btn_devis', 'Demander un devis gratuit'); ?></a>

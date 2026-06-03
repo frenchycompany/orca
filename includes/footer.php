@@ -20,7 +20,7 @@
             <div class="footer-grid">
                 <div class="footer-col">
                     <div class="footer-logo"><?php echo te('footer.logo', 'Maisons'); ?> <span>ORCA</span></div>
-                    <p class="footer-text"><?php echo te('footer.description', 'Constructeur de maisons individuelles depuis 1993. 6 modèles de qualité à prix maîtrisé en Picardie et Île-de-France.'); ?></p>
+                    <p class="footer-text"><?php echo htmlspecialchars($site_config['footer_text'] ?? t('footer.description', 'Constructeur de maisons individuelles depuis 1993. 6 modèles de qualité à prix maîtrisé en Picardie et Île-de-France.')); ?></p>
                     <div class="footer-social">
                         <?php if (!empty($site_config['facebook_url'])): ?>
                         <a href="<?php echo $site_config['facebook_url']; ?>" target="_blank" rel="noopener" aria-label="Facebook">
