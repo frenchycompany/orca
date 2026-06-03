@@ -120,8 +120,21 @@ if ($current_page == 'index') $current_page = 'accueil';
                     <ul class="nav-list">
                         <li><a href="<?php echo url('index.php'); ?>" class="nav-link <?php echo $current_page == 'accueil' ? 'active' : ''; ?>">Accueil</a></li>
                         <li><a href="<?php echo url('constructeur.php'); ?>" class="nav-link <?php echo $current_page == 'constructeur' ? 'active' : ''; ?>">Le constructeur</a></li>
-                        <li><a href="<?php echo url('modeles.php'); ?>" class="nav-link <?php echo $current_page == 'modeles' ? 'active' : ''; ?>">Nos modèles</a></li>
+                        <li><a href="<?php echo url('modeles.php'); ?>" class="nav-link <?php echo $current_page == 'modeles' || $current_page == 'modele' ? 'active' : ''; ?>">Nos modèles</a></li>
                         <li><a href="<?php echo url('engagements.php'); ?>" class="nav-link <?php echo $current_page == 'engagements' ? 'active' : ''; ?>">Nos engagements</a></li>
+                        <?php
+                        // Pages CMS dynamiques marquées in_menu
+                        try {
+                            $menu_pages = $pdo->query("SELECT titre, slug FROM pages WHERE is_active = 1 AND in_menu = 1 ORDER BY menu_order ASC, titre ASC")->fetchAll();
+                            foreach ($menu_pages as $mp):
+                                $mp_slug = $mp['slug'];
+                                $mp_active = (isset($_GET['slug']) && $_GET['slug'] === $mp_slug) ? 'active' : '';
+                        ?>
+                        <li><a href="<?php echo url('page.php?slug=' . $mp_slug); ?>" class="nav-link <?php echo $mp_active; ?>"><?php echo htmlspecialchars($mp['titre']); ?></a></li>
+                        <?php
+                            endforeach;
+                        } catch (Exception $e) {}
+                        ?>
                         <li><a href="<?php echo url('contact.php'); ?>" class="nav-link <?php echo $current_page == 'contact' ? 'active' : ''; ?>">Contact</a></li>
                     </ul>
                     
