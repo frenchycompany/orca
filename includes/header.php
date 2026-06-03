@@ -124,11 +124,15 @@ if ($current_page == 'index') $current_page = 'accueil';
                         <li><a href="<?php echo url('engagements.php'); ?>" class="nav-link <?php echo $current_page == 'engagements' ? 'active' : ''; ?>">Nos engagements</a></li>
                         <?php
                         // Pages CMS dynamiques marquées in_menu
+                        // Exclut les pages qui ont déjà un lien fixe dans le menu
+                        $exclude_slugs = ['mentions-legales', 'politique-confidentialite', 'conditions-vente', 'contact', 'index', 'accueil', 'constructeur', 'modeles', 'engagements', 'faq'];
+                        $exclude_sql = implode(',', array_fill(0, count($exclude_slugs), '?'));
                         try {
-                            $menu_pages = $pdo->query("SELECT titre, slug, template FROM pages WHERE is_active = 1 AND in_menu = 1 ORDER BY menu_order ASC, titre ASC")->fetchAll();
+                            $stmt = $pdo->prepare("SELECT titre, slug, template FROM pages WHERE is_active = 1 AND in_menu = 1 AND slug NOT IN ({$exclude_sql}) ORDER BY menu_order ASC, titre ASC");
+                            $stmt->execute($exclude_slugs);
+                            $menu_pages = $stmt->fetchAll();
                             foreach ($menu_pages as $mp):
                                 $mp_slug = $mp['slug'];
-                                // Si le slug est un fichier PHP qui existe, lier directement vers ce fichier
                                 $mp_file = $mp_slug;
                                 if (strpos($mp_file, '.php') === false) $mp_file .= '.php';
                                 if (file_exists(__DIR__ . '/../' . $mp_file)) {
