@@ -446,17 +446,21 @@ textarea.form-control {
 .nav {
     display: flex;
     align-items: center;
-    gap: var(--space-8);
+    gap: var(--space-4);
+    overflow: hidden;
 }
 
 .nav-list {
     display: flex;
     list-style: none;
-    gap: var(--space-6);
+    gap: var(--space-4);
+    flex-wrap: nowrap;
+    white-space: nowrap;
 }
 
 .nav-link {
     font-weight: 500;
+    font-size: 14px;
     color: var(--color-dark);
     padding: var(--space-2) 0;
     position: relative;
