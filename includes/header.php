@@ -125,12 +125,21 @@ if ($current_page == 'index') $current_page = 'accueil';
                         <?php
                         // Pages CMS dynamiques marquées in_menu
                         try {
-                            $menu_pages = $pdo->query("SELECT titre, slug FROM pages WHERE is_active = 1 AND in_menu = 1 ORDER BY menu_order ASC, titre ASC")->fetchAll();
+                            $menu_pages = $pdo->query("SELECT titre, slug, template FROM pages WHERE is_active = 1 AND in_menu = 1 ORDER BY menu_order ASC, titre ASC")->fetchAll();
                             foreach ($menu_pages as $mp):
                                 $mp_slug = $mp['slug'];
-                                $mp_active = (isset($_GET['slug']) && $_GET['slug'] === $mp_slug) ? 'active' : '';
+                                // Si le slug est un fichier PHP qui existe, lier directement vers ce fichier
+                                $mp_file = $mp_slug;
+                                if (strpos($mp_file, '.php') === false) $mp_file .= '.php';
+                                if (file_exists(__DIR__ . '/../' . $mp_file)) {
+                                    $mp_url = url($mp_file);
+                                } else {
+                                    $mp_url = url('page.php?slug=' . $mp_slug);
+                                }
+                                $mp_active = ($current_page === pathinfo($mp_slug, PATHINFO_FILENAME)) ? 'active' : '';
+                                if (isset($_GET['slug']) && $_GET['slug'] === $mp_slug) $mp_active = 'active';
                         ?>
-                        <li><a href="<?php echo url('page.php?slug=' . $mp_slug); ?>" class="nav-link <?php echo $mp_active; ?>"><?php echo htmlspecialchars($mp['titre']); ?></a></li>
+                        <li><a href="<?php echo $mp_url; ?>" class="nav-link <?php echo $mp_active; ?>"><?php echo htmlspecialchars($mp['titre']); ?></a></li>
                         <?php
                             endforeach;
                         } catch (Exception $e) {}
