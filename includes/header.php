@@ -125,7 +125,14 @@ if ($current_page == 'index') $current_page = 'accueil';
                         <?php
                         // Pages CMS dynamiques marquées in_menu
                         // Exclut les pages qui ont déjà un lien fixe dans le menu
-                        $exclude_slugs = ['mentions-legales', 'politique-confidentialite', 'conditions-vente', 'contact', 'index', 'accueil', 'constructeur', 'modeles', 'engagements', 'faq'];
+                        $exclude_slugs = [
+    'accueil', 'contact', 'constructeur', 'le-constructeur',
+    'modeles', 'nos-modeles', 'engagements', 'nos-engagements',
+    'index', 'faq',
+    'mentions-legales', 'mentions-legales-et-cgv',
+    'politique-confidentialite', 'politique-de-confidentialite',
+    'conditions-vente', 'conditions-generales-de-vente'
+];
                         $exclude_sql = implode(',', array_fill(0, count($exclude_slugs), '?'));
                         try {
                             $stmt = $pdo->prepare("SELECT titre, slug, template FROM pages WHERE is_active = 1 AND in_menu = 1 AND slug NOT IN ({$exclude_sql}) ORDER BY menu_order ASC, titre ASC");
