@@ -19,11 +19,8 @@
         <div class="container">
             <div class="footer-grid">
                 <div class="footer-col">
-                    <div class="footer-logo">Maisons <span>ORCA</span></div>
-                    <p class="footer-text">
-                        Constructeur de maisons individuelles depuis 1993.<br>
-                        6 modèles de qualité à prix maîtrisé en Picardie et Île-de-France.
-                    </p>
+                    <div class="footer-logo"><?php echo te('footer.logo', 'Maisons'); ?> <span>ORCA</span></div>
+                    <p class="footer-text"><?php echo te('footer.description', 'Constructeur de maisons individuelles depuis 1993. 6 modèles de qualité à prix maîtrisé en Picardie et Île-de-France.'); ?></p>
                     <div class="footer-social">
                         <?php if (!empty($site_config['facebook_url'])): ?>
                         <a href="<?php echo $site_config['facebook_url']; ?>" target="_blank" rel="noopener" aria-label="Facebook">
@@ -37,32 +34,37 @@
                         <?php endif; ?>
                     </div>
                 </div>
-                
+
                 <div class="footer-col">
-                    <h4 class="footer-title">Navigation</h4>
+                    <h4 class="footer-title"><?php echo te('footer.nav_title', 'Navigation'); ?></h4>
                     <ul class="footer-links">
-                        <li><a href="<?php echo url('index.php'); ?>">Accueil</a></li>
-                        <li><a href="<?php echo url('constructeur.php'); ?>">Le constructeur</a></li>
-                        <li><a href="<?php echo url('modeles.php'); ?>">Nos modèles</a></li>
-                        <li><a href="<?php echo url('engagements.php'); ?>">Nos engagements</a></li>
-                        <li><a href="<?php echo url('contact.php'); ?>">Contact</a></li>
+                        <li><a href="<?php echo url('index.php'); ?>"><?php echo te('footer.nav_accueil', 'Accueil'); ?></a></li>
+                        <li><a href="<?php echo url('constructeur.php'); ?>"><?php echo te('footer.nav_constructeur', 'Le constructeur'); ?></a></li>
+                        <li><a href="<?php echo url('modeles.php'); ?>"><?php echo te('footer.nav_modeles', 'Nos modèles'); ?></a></li>
+                        <li><a href="<?php echo url('engagements.php'); ?>"><?php echo te('footer.nav_engagements', 'Nos engagements'); ?></a></li>
+                        <li><a href="<?php echo url('contact.php'); ?>"><?php echo te('footer.nav_contact', 'Contact'); ?></a></li>
                     </ul>
                 </div>
-                
+
                 <div class="footer-col">
-                    <h4 class="footer-title">Nos modèles</h4>
+                    <h4 class="footer-title"><?php echo te('footer.modeles_title', 'Nos modèles'); ?></h4>
                     <ul class="footer-links">
-                        <li><a href="<?php echo url('modele.php?slug=le-coquelicot'); ?>">Le Coquelicot</a></li>
-                        <li><a href="<?php echo url('modele.php?slug=la-tulipe'); ?>">La Tulipe</a></li>
-                        <li><a href="<?php echo url('modele.php?slug=l-hibiscus'); ?>">L'Hibiscus</a></li>
-                        <li><a href="<?php echo url('modele.php?slug=le-lila'); ?>">Le Lila</a></li>
-                        <li><a href="<?php echo url('modele.php?slug=l-orchidee'); ?>">L'Orchidée</a></li>
-                        <li><a href="<?php echo url('modele.php?slug=le-magnolia'); ?>">Le Magnolia</a></li>
+                        <?php
+                        // Charger dynamiquement les modèles actifs
+                        try {
+                            $footer_modeles = $pdo->query("SELECT nom, slug FROM modeles WHERE is_active = 1 ORDER BY ordre_affichage ASC")->fetchAll();
+                            foreach ($footer_modeles as $fm):
+                        ?>
+                        <li><a href="<?php echo url('modele.php?slug=' . $fm['slug']); ?>"><?php echo htmlspecialchars($fm['nom']); ?></a></li>
+                        <?php
+                            endforeach;
+                        } catch (Exception $e) {}
+                        ?>
                     </ul>
                 </div>
-                
+
                 <div class="footer-col">
-                    <h4 class="footer-title">Agence principale</h4>
+                    <h4 class="footer-title"><?php echo te('footer.agence_title', 'Agence principale'); ?></h4>
                     <div class="footer-contact-item">
                         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
@@ -84,12 +86,12 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="footer-bottom">
-                <p>&copy; <?php echo date('Y'); ?> Maisons ORCA. Tous droits réservés.</p>
+                <p>&copy; <?php echo date('Y'); ?> <?php echo te('footer.copyright', 'Maisons ORCA. Tous droits réservés.'); ?></p>
                 <p>
-                    <a href="<?php echo url('mentions-legales.php'); ?>">Mentions légales</a> | 
-                    <a href="<?php echo url('politique-confidentialite.php'); ?>">Politique de confidentialité</a>
+                    <a href="<?php echo url('mentions-legales.php'); ?>"><?php echo te('footer.link_mentions', 'Mentions légales'); ?></a> |
+                    <a href="<?php echo url('politique-confidentialite.php'); ?>"><?php echo te('footer.link_confidentialite', 'Politique de confidentialité'); ?></a>
                 </p>
             </div>
         </div>
