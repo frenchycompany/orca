@@ -126,7 +126,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = $pdo->lastInsertId();
     }
     
-    header('Location: modeles.php');
+    // Rester sur la fiche (bouton galerie) ou retourner à la liste
+    if (!empty($_POST['stay'])) {
+        header('Location: modele-edit.php?id=' . $id . '&saved=1#galerie');
+    } else {
+        header('Location: modeles.php');
+    }
     exit;
 }
 
@@ -232,6 +237,10 @@ include 'includes/admin-header.php';
         .me-btn-cancel:hover{background:#f5f5f5;border-color:#999}
         @media(max-width:1100px){.me-layout{grid-template-columns:1fr!important}}
     </style>
+
+    <?php if (isset($_GET['saved'])): ?>
+    <div class="alert alert-success">✅ Modèle enregistré.</div>
+    <?php endif; ?>
 
     <form method="POST" enctype="multipart/form-data">
         <div class="me-layout" style="display:grid;grid-template-columns:minmax(0,2.2fr) minmax(280px,1fr);gap:25px;">
@@ -365,7 +374,7 @@ include 'includes/admin-header.php';
 
                 <!-- Galerie -->
                 <?php $galerie_existante = json_decode($modele['images_galerie'] ?? '[]', true) ?: []; ?>
-                <div class="me-card">
+                <div class="me-card" id="galerie">
                     <h3>🖼️ Galerie photos <span class="me-badge"><?php echo count($galerie_existante); ?> image(s)</span></h3>
                     <?php if (!empty($galerie_existante)): ?>
                     <div id="galerie-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">
@@ -387,6 +396,8 @@ include 'includes/admin-header.php';
                         <input type="file" name="galerie[]" accept="image/jpeg,image/png,image/gif,image/webp" multiple>
                         <small style="color:#999;font-size:11px;margin-top:6px;display:block;">Sélection multiple possible (Ctrl/Cmd + clic). Max 5 Mo par image. Les photos retirées (✕) sont supprimées à l'enregistrement.</small>
                     </div>
+                    <button type="submit" name="stay" value="1" class="me-btn-save" style="margin-top:12px;">💾 Enregistrer la galerie</button>
+                    <small style="color:#999;font-size:11px;margin-top:6px;display:block;text-align:center;">Enregistre toute la fiche et reste sur cette page</small>
                 </div>
                 <script>
                 function updateGalerieCount(){
