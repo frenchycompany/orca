@@ -50,9 +50,15 @@ $page_description = t('estimation.meta_description', 'Obtenez une estimation gra
         </div>
 
         <div class="lp-iframe-wrap">
-            <iframe src="https://bot.frenchycompany.fr/api/v1/iframe.php?token=83059f1ffd4adf64a5ef5e9a803dd1d2"
+            <?php if (frenchybotEnabled()): ?>
+            <iframe src="<?php echo htmlspecialchars(frenchybotIframeUrl()); ?>"
                     title="Assistant ORCA"
                     allow="clipboard-write"></iframe>
+            <?php else: ?>
+            <div style="padding:40px;text-align:center;color:#888;background:#fff;">
+                Chatbot non configuré.<br><small>Renseignez le token FrenchyBot dans Admin &gt; Configuration.</small>
+            </div>
+            <?php endif; ?>
         </div>
 
         <div class="lp-trust">

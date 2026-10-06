@@ -26,7 +26,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'facebook_url', 'instagram_url', 'linkedin_url', 'youtube_url',
         'google_analytics', 'google_maps_api',
         'color_primary', 'color_secondary', 'color_dark',
-        'footer_text', 'horaires', 'zone_intervention'
+        'footer_text', 'horaires', 'zone_intervention',
+        'frenchybot_token', 'frenchybot_url'
     ];
     
     foreach ($fields as $field) {
@@ -254,6 +255,32 @@ include 'includes/admin-header.php';
                 <label class="form-label">Google Maps API Key</label>
                 <input type="text" name="google_maps_api" class="form-control" value="<?php echo htmlspecialchars($configs['google_maps_api'] ?? ''); ?>">
             </div>
+        </div>
+
+        <!-- SECTION : FrenchyBot -->
+        <div class="admin-section">
+            <h2>🤖 Chatbot FrenchyBot</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Token du chatbot <span class="required">*</span></label>
+                    <input type="text" name="frenchybot_token" class="form-control" value="<?php echo htmlspecialchars($configs['frenchybot_token'] ?? ''); ?>" placeholder="83059f1ffd4adf64a5ef5e9a803dd1d2" style="font-family:monospace;">
+                    <small>Token fourni par l'admin FrenchyBot pour ce domaine. Laisser vide pour désactiver le chatbot sur tout le site.</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">URL de la plateforme</label>
+                    <input type="url" name="frenchybot_url" class="form-control" value="<?php echo htmlspecialchars($configs['frenchybot_url'] ?? 'https://bot.frenchycompany.fr'); ?>" placeholder="https://bot.frenchycompany.fr">
+                    <small>Ne changer que si FrenchyBot est hébergé ailleurs.</small>
+                </div>
+            </div>
+            <?php if (!empty($configs['frenchybot_token'])): ?>
+            <div style="padding:12px 14px;background:#f0faf9;border-radius:8px;font-size:13px;color:#1a5653;">
+                ✅ Chatbot actif — bulle sur toutes les pages + iframe sur l'accueil, les fiches modèles et <code>/estimation.php</code>
+            </div>
+            <?php else: ?>
+            <div style="padding:12px 14px;background:#fff3cd;border-radius:8px;font-size:13px;color:#856404;">
+                ⚠️ Aucun token : le chatbot est désactivé sur le site
+            </div>
+            <?php endif; ?>
         </div>
         
         <!-- SECTION : Contenu -->

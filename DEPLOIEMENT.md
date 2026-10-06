@@ -51,6 +51,7 @@ mysql -u orca_user -p orca < terrains.sql                    # terrains + 10 exe
 mysql -u orca_user -p orca < site_texts.sql                  # textes éditables
 mysql -u orca_user -p orca < modeles_inclusions.sql          # colonnes inclusions par modèle
 mysql -u orca_user -p orca < update_prix_modeles.sql         # prix_base des 6 modèles
+mysql -u orca_user -p orca < frenchybot_config.sql           # clés config du chatbot (token à remplacer ensuite dans l'admin)
 ```
 
 Optionnel (intentions du chatbot local — utile uniquement si on réactive le chatbot interne) :
@@ -84,15 +85,13 @@ define('DB_PASS', 'MOT_DE_PASSE_FORT');
 
 > `SITE_URL` est détecté automatiquement, rien à changer.
 
-## 6. Token FrenchyBot (IMPORTANT)
+## 6. Token FrenchyBot
 
-Le token actuel `83059f1ffd4adf64a5ef5e9a803dd1d2` est lié au domaine `orca.frenchyconciergerie.fr`. FrenchyBot vérifie le domaine d'origine : **il faut créer un nouveau chatbot dans l'admin FrenchyBot avec le domaine du client** et récupérer son token.
+FrenchyBot vérifie le domaine d'origine : **créer un nouveau chatbot dans l'admin FrenchyBot avec le domaine du client** et récupérer son token.
 
-Puis remplacer le token dans les 4 fichiers :
-```bash
-cd /var/www/orca
-sed -i 's/83059f1ffd4adf64a5ef5e9a803dd1d2/NOUVEAU_TOKEN/g' includes/footer.php index.php modele.php estimation.php
-```
+Puis le renseigner dans **Admin > Configuration > 🤖 Chatbot FrenchyBot > Token**. Aucun fichier à modifier.
+
+> Si le champ est vide, le chatbot est désactivé sur tout le site (bulle + iframes). Pratique pour mettre en ligne sans chatbot au début.
 
 ## 7. VirtualHost Apache
 
@@ -147,7 +146,7 @@ UPDATE users SET password_hash = 'HASH_GENERE', email = 'contact@domaine-client.
 
 Dans l'ordre :
 
-1. **Configuration** → nom du site, slogan, téléphone, email, adresse, couleurs, logo, favicon
+1. **Configuration** → nom du site, slogan, téléphone, email, adresse, couleurs, logo, favicon, **token FrenchyBot**
 2. **Modèles** → vérifier les 6 modèles, uploader les photos, adapter les prix et les inclusions
 3. **Terrains** → supprimer les 10 exemples, saisir les vrais terrains
 4. **Pages CMS** → supprimer les doublons des pages statiques :

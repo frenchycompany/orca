@@ -215,6 +215,7 @@ include 'includes/header.php';
 </section>
 <?php endif; ?>
 
+<?php if (frenchybotEnabled()): ?>
 <!-- Section: Chatbot FrenchyBot -->
 <section class="section section-alt" id="devis">
     <div class="container container-narrow">
@@ -225,7 +226,7 @@ include 'includes/header.php';
         </div>
 
         <div style="border-radius:16px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,0.12);max-width:520px;margin:0 auto;">
-            <iframe src="https://bot.frenchycompany.fr/api/v1/iframe.php?token=83059f1ffd4adf64a5ef5e9a803dd1d2"
+            <iframe src="<?php echo htmlspecialchars(frenchybotIframeUrl()); ?>"
                     style="width:100%;height:500px;border:none;display:block;"
                     title="Devis <?php echo htmlspecialchars($modele['nom']); ?>"
                     loading="lazy"
@@ -233,6 +234,7 @@ include 'includes/header.php';
         </div>
     </div>
 </section>
+<?php endif; ?>
 
 <!-- Ancien formulaire masqué (fallback) -->
 <section class="section" style="display:none;" id="devis-form-fallback">

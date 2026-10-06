@@ -4,6 +4,36 @@
  */
 
 // ======================================================
+// FRENCHYBOT (chatbot externalisé)
+// Token et URL configurables dans Admin > Configuration
+// ======================================================
+
+function frenchybotToken() {
+    global $site_config;
+    return trim($site_config['frenchybot_token'] ?? '');
+}
+
+function frenchybotBaseUrl() {
+    global $site_config;
+    return rtrim($site_config['frenchybot_url'] ?? 'https://bot.frenchycompany.fr', '/');
+}
+
+/** URL du script widget (bulle flottante) */
+function frenchybotEmbedUrl() {
+    return frenchybotBaseUrl() . '/api/v1/embed.js.php?token=' . urlencode(frenchybotToken());
+}
+
+/** URL de l'iframe (chatbot intégré dans une page) */
+function frenchybotIframeUrl() {
+    return frenchybotBaseUrl() . '/api/v1/iframe.php?token=' . urlencode(frenchybotToken());
+}
+
+/** Vrai si un token est renseigné */
+function frenchybotEnabled() {
+    return frenchybotToken() !== '';
+}
+
+// ======================================================
 // TEXTES ÉDITABLES
 // Usage: t('page.cle', 'Texte par défaut')
 // ======================================================
