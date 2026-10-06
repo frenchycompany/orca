@@ -3,6 +3,7 @@
  * Landing page - Estimation chatbot plein écran via FrenchyBot
  */
 require_once __DIR__ . '/includes/config.php';
+trackPageView('estimation');
 
 $page_title = t('estimation.meta_title', 'Estimez votre maison en 2 minutes - Maisons ORCA');
 $page_description = t('estimation.meta_description', 'Obtenez une estimation gratuite et personnalisée pour votre projet de construction. Réponse sous 24h.');

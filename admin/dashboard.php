@@ -20,11 +20,51 @@ $stats = [
 // Derniers leads
 $recent_leads = $pdo->query("SELECT l.*, m.nom as modele_nom FROM leads l LEFT JOIN modeles m ON l.modele_interesse = m.id ORDER BY l.created_at DESC LIMIT 5")->fetchAll();
 
+// Trafic 7 derniers jours (table page_views, optionnelle)
+$traffic = null;
+try {
+    $since7 = date('Y-m-d', strtotime('-6 days'));
+    $r = $pdo->prepare("SELECT day, COUNT(*) v, COUNT(DISTINCT visitor_hash) u FROM page_views WHERE day >= ? GROUP BY day");
+    $r->execute([$since7]);
+    $byDay = []; foreach ($r->fetchAll() as $d) $byDay[$d['day']] = $d;
+    $traffic = ['views' => 0, 'visitors' => 0, 'days' => []];
+    for ($i = 6; $i >= 0; $i--) {
+        $d = date('Y-m-d', strtotime("-{$i} days"));
+        $u = (int) ($byDay[$d]['u'] ?? 0);
+        $traffic['days'][] = ['label' => date('D', strtotime($d)), 'u' => $u];
+        $traffic['views'] += (int) ($byDay[$d]['v'] ?? 0);
+        $traffic['visitors'] += $u;
+    }
+    $r = $pdo->prepare("SELECT COUNT(*) FROM leads WHERE created_at >= ?");
+    $r->execute([$since7 . ' 00:00:00']);
+    $traffic['leads'] = (int) $r->fetchColumn();
+} catch (Throwable $e) { $traffic = null; }
+
 include 'includes/admin-header.php';
 ?>
 
 <div class="admin-content">
     <h1 class="admin-title">Tableau de bord</h1>
+
+    <?php if ($traffic !== null): $maxU = max(1, max(array_column($traffic['days'], 'u'))); ?>
+    <!-- Trafic 7 jours -->
+    <div class="admin-section" style="display:grid;grid-template-columns:auto 1fr auto;gap:24px;align-items:center;">
+        <div>
+            <div style="font-size:12px;color:#888;text-transform:uppercase;letter-spacing:.3px;">7 derniers jours</div>
+            <div style="display:flex;gap:22px;margin-top:6px;">
+                <div><div style="font-size:26px;font-weight:700;"><?php echo number_format($traffic['visitors'], 0, ',', ' '); ?></div><div style="font-size:11px;color:#999;">visiteurs</div></div>
+                <div><div style="font-size:26px;font-weight:700;color:#666;"><?php echo number_format($traffic['views'], 0, ',', ' '); ?></div><div style="font-size:11px;color:#999;">pages vues</div></div>
+                <div><div style="font-size:26px;font-weight:700;color:var(--color-primary);"><?php echo $traffic['leads']; ?></div><div style="font-size:11px;color:#999;">leads</div></div>
+            </div>
+        </div>
+        <div style="display:flex;align-items:flex-end;gap:6px;height:56px;">
+            <?php foreach ($traffic['days'] as $d): $h = max(3, round($d['u'] / $maxU * 56)); ?>
+            <div title="<?php echo $d['label']; ?> : <?php echo $d['u']; ?> visiteurs" style="flex:1;height:<?php echo $h; ?>px;background:#1a5653;border-radius:3px 3px 0 0;opacity:.85;"></div>
+            <?php endforeach; ?>
+        </div>
+        <a href="statistiques.php" class="btn btn-primary btn-sm" style="white-space:nowrap;">Voir les statistiques →</a>
+    </div>
+    <?php endif; ?>
     
     <!-- Stats -->
     <div class="stats-grid">

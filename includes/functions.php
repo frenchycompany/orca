@@ -300,3 +300,76 @@ function getEtageBadge($etage) {
     ];
     return $badges[$etage] ?? '';
 }
+
+// ======================================================
+// STATISTIQUES DE FRÉQUENTATION (côté serveur, sans cookie)
+// ======================================================
+
+/**
+ * Enregistre une page vue. Ne lève jamais d'erreur (ne doit pas casser le site).
+ * @param string|null $pageType  ex: accueil, modele, contact...
+ * @param int|null    $modeleId  id du modèle consulté (page modele.php)
+ */
+function trackPageView($pageType = null, $modeleId = null) {
+    global $pdo;
+    try {
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') return;
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) return;
+        $script = $_SERVER['SCRIPT_NAME'] ?? '';
+        if (strpos($script, '/admin/') !== false || strpos($script, '/chatbot/') !== false) return;
+
+        $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
+        if ($ua === '' || preg_match('/bot|crawl|spider|slurp|curl|wget|python|facebookexternalhit|preview|lighthouse|headless|monitor|uptime/i', $ua)) return;
+
+        $path = strtok($_SERVER['REQUEST_URI'] ?? '/', '?') ?: '/';
+        if ($path === '/index.php') $path = '/';
+        // Garder le slug pour les pages modèle / CMS / actualité
+        if (!empty($_GET['slug']) && in_array($pageType, ['modele', 'page', 'actualite'], true)) {
+            $path .= '?slug=' . preg_replace('/[^a-z0-9\-]/', '', strtolower($_GET['slug']));
+        }
+
+        // Referer externe uniquement
+        $refHost = null;
+        if (!empty($_SERVER['HTTP_REFERER'])) {
+            $h = strtolower((string) parse_url($_SERVER['HTTP_REFERER'], PHP_URL_HOST));
+            $h = preg_replace('/^www\./', '', $h);
+            $own = preg_replace('/^www\./', '', strtolower($_SERVER['HTTP_HOST'] ?? ''));
+            if ($h !== '' && $h !== $own) $refHost = substr($h, 0, 120);
+        }
+
+        $ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? '';
+        $ip = trim(explode(',', $ip)[0]);
+        // Hash journalier : identifie un visiteur sur la journée seulement, non réversible
+        $visitor = substr(hash('sha256', $ip . '|' . $ua . '|' . date('Y-m-d') . '|orca-stats'), 0, 32);
+        $isMobile = preg_match('/Mobile|Android|iPhone|iPad/i', $ua) ? 1 : 0;
+
+        $pdo->prepare("INSERT INTO page_views (day, path, page_type, modele_id, referer_host, visitor_hash, is_mobile)
+                       VALUES (CURDATE(), ?, ?, ?, ?, ?, ?)")
+            ->execute([
+                substr($path, 0, 255),
+                substr($pageType ?: 'autre', 0, 30),
+                $modeleId ? (int) $modeleId : null,
+                $refHost,
+                $visitor,
+                $isMobile
+            ]);
+    } catch (Throwable $e) {
+        // Table absente ou BDD indisponible : on ignore silencieusement
+    }
+}
+
+/**
+ * Libellé lisible d'une source de trafic
+ */
+function trafficSourceLabel($host) {
+    if ($host === null || $host === '') return 'Accès direct';
+    if (preg_match('/google\./', $host)) return 'Google';
+    if (preg_match('/bing\./', $host)) return 'Bing';
+    if (preg_match('/facebook\.|fb\.com|fbcdn/', $host)) return 'Facebook';
+    if (preg_match('/instagram\./', $host)) return 'Instagram';
+    if (preg_match('/linkedin\./', $host)) return 'LinkedIn';
+    if (preg_match('/youtube\.|youtu\.be/', $host)) return 'YouTube';
+    if (preg_match('/duckduckgo\.|qwant\.|ecosia\.|yahoo\./', $host)) return 'Autres moteurs';
+    if (preg_match('/frenchycompany\.fr/', $host)) return 'FrenchyBot';
+    return $host;
+}

@@ -62,6 +62,7 @@ mysql -u orca_user -p orca < site_texts.sql                  # textes éditables
 mysql -u orca_user -p orca < modeles_inclusions.sql          # colonnes inclusions par modèle
 mysql -u orca_user -p orca < update_prix_modeles.sql         # prix_base des 6 modèles
 mysql -u orca_user -p orca < frenchybot_config.sql           # clés config du chatbot (token à remplacer ensuite dans l'admin)
+mysql -u orca_user -p orca < page_views.sql                  # statistiques de fréquentation (Admin > Statistiques)
 ```
 
 Optionnel (intentions du chatbot local — utile uniquement si on réactive le chatbot interne) :

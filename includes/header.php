@@ -7,6 +7,9 @@ require_once __DIR__ . '/config.php';
 // Récupérer la page courante
 $current_page = basename($_SERVER['PHP_SELF'], '.php');
 if ($current_page == 'index') $current_page = 'accueil';
+
+// Statistiques de fréquentation (sans cookie)
+trackPageView($current_page, isset($modele['id']) ? $modele['id'] : null);
 ?>
 <!DOCTYPE html>
 <html lang="fr">
