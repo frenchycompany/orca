@@ -28,6 +28,16 @@ chown -R www-data:www-data uploads logs
 chmod -R 775 uploads logs
 ```
 
+### Limites d'upload PHP (galerie photos des modèles)
+
+Par défaut PHP limite à 8 Mo par requête. Pour uploader plusieurs photos d'un coup :
+```bash
+PHPINI=$(php -i | grep "Loaded Configuration File" | awk '{print $NF}' | sed 's#/cli/#/fpm/#')
+sed -i 's/^upload_max_filesize.*/upload_max_filesize = 10M/; s/^post_max_size.*/post_max_size = 64M/; s/^max_file_uploads.*/max_file_uploads = 30/' $PHPINI
+systemctl restart php8.3-fpm
+```
+Et dans le server block Nginx : `client_max_body_size 64M;`
+
 ## 3. Créer la base de données
 
 ```bash

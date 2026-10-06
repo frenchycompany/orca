@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'inclus_equipements' => $_POST['inclus_equipements'] ?? ''
     ];
     
-    // Gestion de l'image
+    // Gestion de l'image principale
     if (!empty($_FILES['image_principale']['name'])) {
         $uploadResult = uploadImage($_FILES['image_principale'], 'maisons');
         if ($uploadResult['success']) {
@@ -57,19 +57,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (isset($_POST['image_principale_existante'])) {
         $data['image_principale'] = $_POST['image_principale_existante'];
     }
+
+    // Gestion de la galerie : images conservées + nouveaux uploads multiples
+    $galerie = [];
+    if (!empty($_POST['galerie_existante']) && is_array($_POST['galerie_existante'])) {
+        foreach ($_POST['galerie_existante'] as $g) {
+            $g = basename(trim($g));
+            if ($g !== '') $galerie[] = $g;
+        }
+    }
+    if (!empty($_FILES['galerie']['name'][0])) {
+        $count = count($_FILES['galerie']['name']);
+        for ($i = 0; $i < $count; $i++) {
+            if ($_FILES['galerie']['error'][$i] !== UPLOAD_ERR_OK) continue;
+            $single = [
+                'name'     => $_FILES['galerie']['name'][$i],
+                'type'     => $_FILES['galerie']['type'][$i],
+                'tmp_name' => $_FILES['galerie']['tmp_name'][$i],
+                'error'    => $_FILES['galerie']['error'][$i],
+                'size'     => $_FILES['galerie']['size'][$i],
+            ];
+            $res = uploadImage($single, 'maisons');
+            if ($res['success']) $galerie[] = $res['filename'];
+        }
+    }
+    $data['images_galerie'] = json_encode(array_values($galerie));
     
     if ($id) {
         // Update
         $sql = "UPDATE modeles SET nom=?, slug=?, slogan=?, description=?, points_forts=?,
                 surface_habitable=?, nb_chambres=?, nb_salles_bain=?, nb_etages=?, style=?,
                 prix_afficher=?, is_active=?, ordre_affichage=?, meta_title=?, meta_description=?,
-                inclus_structure=?, inclus_interieur=?, inclus_equipements=?";
+                inclus_structure=?, inclus_interieur=?, inclus_equipements=?, images_galerie=?";
         $params = [
             $data['nom'], $data['slug'], $data['slogan'], $data['description'], $data['points_forts'],
             $data['surface_habitable'], $data['nb_chambres'], $data['nb_salles_bain'],
             $data['nb_etages'], $data['style'], $data['prix_afficher'], $data['is_active'],
             $data['ordre_affichage'], $data['meta_title'], $data['meta_description'],
-            $data['inclus_structure'], $data['inclus_interieur'], $data['inclus_equipements']
+            $data['inclus_structure'], $data['inclus_interieur'], $data['inclus_equipements'],
+            $data['images_galerie']
         ];
         
         if (isset($data['image_principale'])) {
@@ -85,8 +111,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Insert
         $sql = "INSERT INTO modeles (nom, slug, slogan, description, points_forts, surface_habitable,
                 nb_chambres, nb_salles_bain, nb_etages, style, prix_afficher, is_active, ordre_affichage,
-                meta_title, meta_description, image_principale, inclus_structure, inclus_interieur, inclus_equipements)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                meta_title, meta_description, image_principale, inclus_structure, inclus_interieur, inclus_equipements, images_galerie)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
             $data['nom'], $data['slug'], $data['slogan'], $data['description'], $data['points_forts'],
@@ -94,7 +120,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data['nb_etages'], $data['style'], $data['prix_afficher'], $data['is_active'],
             $data['ordre_affichage'], $data['meta_title'], $data['meta_description'],
             $data['image_principale'] ?? null,
-            $data['inclus_structure'], $data['inclus_interieur'], $data['inclus_equipements']
+            $data['inclus_structure'], $data['inclus_interieur'], $data['inclus_equipements'],
+            $data['images_galerie']
         ]);
         $id = $pdo->lastInsertId();
     }
@@ -335,6 +362,39 @@ include 'includes/admin-header.php';
                         <small style="color:#999;font-size:11px;margin-top:6px;display:block;">JPG, PNG, GIF, WebP — max 5 Mo</small>
                     </div>
                 </div>
+
+                <!-- Galerie -->
+                <?php $galerie_existante = json_decode($modele['images_galerie'] ?? '[]', true) ?: []; ?>
+                <div class="me-card">
+                    <h3>🖼️ Galerie photos <span class="me-badge"><?php echo count($galerie_existante); ?> image(s)</span></h3>
+                    <?php if (!empty($galerie_existante)): ?>
+                    <div id="galerie-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">
+                        <?php foreach ($galerie_existante as $img): ?>
+                        <div class="galerie-item" style="position:relative;aspect-ratio:4/3;border-radius:8px;overflow:hidden;border:1px solid #e8e8e8;background:#f5f5f5;">
+                            <img src="../uploads/maisons/<?php echo htmlspecialchars($img); ?>" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">
+                            <input type="hidden" name="galerie_existante[]" value="<?php echo htmlspecialchars($img); ?>">
+                            <button type="button" onclick="this.closest('.galerie-item').remove();updateGalerieCount();" title="Retirer de la galerie"
+                                style="position:absolute;top:4px;right:4px;width:22px;height:22px;border:none;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;font-size:13px;line-height:1;cursor:pointer;">✕</button>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php else: ?>
+                    <div id="galerie-grid"></div>
+                    <p style="font-size:12px;color:#999;margin-bottom:12px;">Aucune photo supplémentaire. L'image principale sera seule dans la galerie.</p>
+                    <?php endif; ?>
+                    <div class="me-field">
+                        <label>Ajouter des photos</label>
+                        <input type="file" name="galerie[]" accept="image/jpeg,image/png,image/gif,image/webp" multiple>
+                        <small style="color:#999;font-size:11px;margin-top:6px;display:block;">Sélection multiple possible (Ctrl/Cmd + clic). Max 5 Mo par image. Les photos retirées (✕) sont supprimées à l'enregistrement.</small>
+                    </div>
+                </div>
+                <script>
+                function updateGalerieCount(){
+                    var n=document.querySelectorAll('#galerie-grid .galerie-item').length;
+                    var b=document.querySelector('#galerie-grid').closest('.me-card').querySelector('.me-badge');
+                    if(b)b.textContent=n+' image(s)';
+                }
+                </script>
 
                 <!-- Publication -->
                 <div class="me-card">
